@@ -19,7 +19,7 @@
   h1{font-family:'Song Myung',serif;font-size:21px;color:#e8c87a;margin:0 0 4px;letter-spacing:.06em}
   .sub{font-size:13px;color:#8d7c63;margin:0 0 26px}
   .card{background:#1b100d;border:1px solid rgba(200,150,70,.3);border-radius:14px;
-        padding:20px 18px;margin-bottom:18px}
+        padding:20px 18px;margin-bottom:18px;min-width:0;overflow:hidden}
   h2{font-family:'Song Myung',serif;font-size:16px;color:#dcb972;margin:0 0 14px}
   label{display:block;font-size:13px;color:#a2917a;margin:0 0 6px}
   input,select{width:100%;padding:12px 13px;margin-bottom:13px;border-radius:9px;
@@ -36,7 +36,9 @@
   .keybox{margin-top:12px;padding:13px;border:1px dashed rgba(214,166,80,.45);border-radius:9px;
         background:#0d0605;font-size:13px;line-height:1.75;word-break:break-all;display:none}
   .keybox b{color:#e8c87a;display:block;margin-bottom:6px;font-weight:400}
-  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:324px}
+  .sub2{font-size:11.5px;color:#8d7c63;margin-top:4px}
   th,td{padding:11px 8px;text-align:left;border-bottom:1px solid rgba(200,150,70,.16);vertical-align:top}
   th{color:#a2917a;font-weight:400;font-size:12.5px}
   td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -48,7 +50,16 @@
   .note{font-size:12.5px;color:#7d6e58;line-height:1.85;margin-top:14px}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .row>*{margin-bottom:0}
-  .row select{width:auto;min-width:120px}
+  .row select{width:auto;min-width:118px}
+  .find{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;margin-bottom:16px}
+  .find input,.find select{margin:0;font-size:15px;padding:10px 12px;min-width:0;max-width:100%}
+  .find .pair{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .find .dates{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:7px;align-items:center}
+  .find .dates span{font-size:13px;color:#8d7c63}
+  @media(min-width:620px){ .find{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr)} .find .wide{grid-column:1/-1} }
+  .sum{font-size:13px;color:#8d7c63;margin:0 0 12px;line-height:1.8}
+  .sum b{color:#cfae6c;font-weight:400}
+  .keep{font-size:11.5px;color:#6f6253;white-space:nowrap;margin-top:4px}
   a{color:#d9b45f}
   [hidden]{display:none!important}
 </style>
@@ -93,10 +104,32 @@
 
     <section class="card">
       <h2>결제 기록</h2>
+      <div class="find">
+        <input id="fq" type="search" placeholder="결제번호로 찾기" autocapitalize="off" spellcheck="false" aria-label="결제번호로 찾기">
+        <select id="fsvc" aria-label="서비스">
+          <option value="">서비스 전체</option>
+          <option value="사주">백귀사주</option>
+          <option value="타로">백귀타로</option>
+          <option value="관상">백귀관상</option>
+        </select>
+        <select id="fst" aria-label="상태">
+          <option value="">상태 전체</option>
+          <option value="new">열람 안 함</option>
+          <option value="open">열람함</option>
+          <option value="err">오류</option>
+        </select>
+        <div class="dates wide">
+          <input id="f1" type="date" aria-label="시작일">
+          <span>부터</span>
+          <input id="f2" type="date" aria-label="종료일">
+        </div>
+      </div>
       <div class="row" style="margin-bottom:14px">
         <button id="reloadBtn" type="button" class="quiet">새로 보기</button>
+        <button id="clearBtn" type="button" class="quiet">조건 지우기</button>
         <span class="note" style="margin:0" id="count"></span>
       </div>
+      <p class="sum" id="sum"></p>
       <div id="rows"></div>
       <p class="note">
         <b style="color:#a2917a;font-weight:400">환불 판단</b><br>
@@ -105,6 +138,21 @@
         오류 → 손님 잘못이 아니니 환불해 주십시오.<br>
         환불 버튼은 <b style="color:#a2917a;font-weight:400">포트원</b>에서 누르십니다. 여기엔 일부러 두지 않았습니다.
       </p>
+    </section>
+
+    <section class="card">
+      <h2>자료 보관</h2>
+      <p class="note" style="margin-top:0">
+        결제 기록은 <b style="color:#a2917a;font-weight:400">5년</b> 보관하고 지웁니다.
+        전자상거래법 제6조와 같은 법 시행령 제6조가 정한 기간입니다
+        (대금결제·재화 공급 기록 5년, 계약·청약철회 기록 5년).<br>
+        날마다 새벽에 저절로 돌면서 기간이 지난 것을 실제로 지웁니다.
+        적어만 두고 안 지우면 거짓말이 되기 때문입니다.
+      </p>
+      <div class="row" style="margin-top:14px">
+        <button id="purgeBtn" type="button" class="quiet">지금 한 번 치우기</button>
+        <span class="note" style="margin:0" id="purgeMsg"></span>
+      </div>
     </section>
 
     <section class="card">
@@ -156,6 +204,16 @@ $('#keyBtn').onclick = async () => {
   });
 };
 
+let ALL = [];
+
+function daysLeft(ms){
+  if(!ms) return '';
+  const d = Math.ceil((ms - Date.now())/86400000);
+  if (d <= 0) return '보관 만료';
+  if (d > 365) return Math.floor(d/365) + '년 뒤 파기';
+  return d + '일 뒤 파기';
+}
+
 function fmt(ms){
   if (!ms) return '—';
   const d = new Date(ms);
@@ -163,36 +221,97 @@ function fmt(ms){
   return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+function stateOf(x){ return x.error ? 'err' : (x.openedAt ? 'open' : 'new'); }
+
+function filtered(){
+  const q = $('#fq').value.trim().toLowerCase();
+  const svc = $('#fsvc').value, st = $('#fst').value;
+  const d1 = $('#f1').value ? new Date($('#f1').value + 'T00:00:00').getTime() : 0;
+  const d2 = $('#f2').value ? new Date($('#f2').value + 'T23:59:59').getTime() : 0;
+  return ALL.filter(x => {
+    if (q && !String(x.id).toLowerCase().includes(q)) return false;
+    if (svc && x.service !== svc) return false;
+    if (st && stateOf(x) !== st) return false;
+    const at = x.paidAt || x.at || 0;
+    if (d1 && at < d1) return false;
+    if (d2 && at > d2) return false;
+    return true;
+  });
+}
+
 async function load(){
   const r = await api('/api/admin?do=list');
+  if (!r.ok) { $('#count').textContent=''; $('#sum').textContent='';
+    $('#rows').innerHTML = '<p class="empty">'+(r.error||'불러오지 못했습니다')+'</p>'; return; }
+  ALL = r.rows || [];
+  draw();
+}
+
+function draw(){
   const box = $('#rows'); box.textContent='';
-  if (!r.ok) { $('#count').textContent=''; box.innerHTML = '<p class="empty">'+(r.error||'불러오지 못했습니다')+'</p>'; return; }
-  const rows = r.rows || [];
-  $('#count').textContent = rows.length ? rows.length + '건' : '';
-  if (!rows.length) {
-    box.innerHTML = '<p class="empty">아직 기록이 없습니다.<br>포트원을 붙이고 손님이 결제하면 여기에 쌓입니다.</p>';
+  const rows = filtered();
+  $('#count').textContent = ALL.length
+    ? (rows.length === ALL.length ? ALL.length + '건' : rows.length + ' / ' + ALL.length + '건')
+    : '';
+  if (!ALL.length) {
+    $('#sum').textContent = '';
+    box.innerHTML = '<p class="empty">아직 기록이 없습니다.<br>결제를 붙이고 손님이 결제하면 여기에 쌓입니다.</p>';
     return;
   }
+  if (!rows.length) {
+    $('#sum').textContent = '';
+    box.innerHTML = '<p class="empty">찾으시는 조건에 맞는 것이 없습니다.</p>';
+    return;
+  }
+  const money = rows.reduce((a,x)=>a+(Number(x.amount)||0),0);
+  const nOpen = rows.filter(x=>stateOf(x)==='open').length;
+  const nErr  = rows.filter(x=>stateOf(x)==='err').length;
+  $('#sum').innerHTML = '합계 <b>' + money.toLocaleString('ko-KR') + '원</b> · 열람함 <b>'
+    + nOpen + '건</b> · 열람 안 함 <b>' + (rows.length-nOpen-nErr) + '건</b> · 오류 <b>' + nErr + '건</b>';
+
   const t = document.createElement('table');
-  t.innerHTML = '<thead><tr><th>결제번호</th><th>서비스</th><th>금액</th><th>결제시각</th><th>상태</th></tr></thead>';
+  t.innerHTML = '<thead><tr><th>결제번호 · 서비스</th><th>금액 · 결제시각</th><th>상태</th></tr></thead>';
   const tb = document.createElement('tbody');
+  const small = (txt, cls) => { const d=document.createElement('div'); d.className=cls||'sub2'; d.textContent=txt; return d; };
   rows.forEach(x => {
     const tr = document.createElement('tr');
-    const td = (txt, cls) => { const d=document.createElement('td'); if(cls)d.className=cls; d.textContent=txt; return d; };
-    tr.append(td(x.id,'num'), td(x.service||'—'));
-    tr.append(td(x.amount ? x.amount.toLocaleString('ko-KR')+'원' : '—','num'));
-    tr.append(td(fmt(x.paidAt||x.at),'num'));
-    const s = document.createElement('td'); const g = document.createElement('span');
+
+    const c1 = document.createElement('td'); c1.className='num';
+    c1.textContent = x.id;
+    c1.append(small(x.service ? '백귀' + x.service : '—'));
+
+    const c2 = document.createElement('td'); c2.className='num';
+    c2.textContent = x.amount ? x.amount.toLocaleString('ko-KR')+'원' : '—';
+    c2.append(small(fmt(x.paidAt||x.at)));
+
+    const c3 = document.createElement('td');
+    const g = document.createElement('span');
     if (x.error)        { g.className='tag t-err';  g.textContent='오류'; }
-    else if (x.openedAt){ g.className='tag t-open'; g.textContent='열람함 '+fmt(x.openedAt); }
+    else if (x.openedAt){ g.className='tag t-open'; g.textContent='열람함'; }
     else                { g.className='tag t-new';  g.textContent='열람 안 함'; }
-    s.append(g);
-    if (x.error) { const n=document.createElement('div'); n.style.cssText='font-size:12px;color:#8d7c63;margin-top:5px'; n.textContent=x.error; s.append(n); }
-    tr.append(s); tb.append(tr);
+    c3.append(g);
+    if (x.openedAt && !x.error) c3.append(small(fmt(x.openedAt)));
+    if (x.error) c3.append(small(x.error));
+    if (x.keepUntil) c3.append(small(daysLeft(x.keepUntil),'keep'));
+
+    tr.append(c1, c2, c3); tb.append(tr);
   });
-  t.append(tb); box.append(t);
+  const sc = document.createElement('div'); sc.className='scroll';
+  t.append(tb); sc.append(t); box.append(sc);
 }
 $('#reloadBtn').onclick = load;
+$('#clearBtn').onclick = () => { ['fq','fsvc','fst','f1','f2'].forEach(id=>{$('#'+id).value=''}); draw(); };
+['fq','fsvc','fst','f1','f2'].forEach(id => {
+  $('#'+id).addEventListener('input', draw);
+  $('#'+id).addEventListener('change', draw);
+});
+
+$('#purgeBtn').onclick = async () => {
+  const m = $('#purgeMsg'); m.textContent = '치우는 중…';
+  const r = await api('/api/cron-purge', {});
+  m.textContent = r.ok ? (r.deleted ? r.deleted + '건을 지웠습니다' : '지울 것이 없습니다') : (r.error || '치우지 못했습니다');
+  if (r.ok && r.deleted) load();
+};
 
 /* 이미 로그인돼 있으면 바로 열어준다 */
 api('/api/admin?do=me').then(r => { if (r.ok) { show(true); load(); } });

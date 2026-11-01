@@ -6,7 +6,7 @@
  * GET  /api/admin?do=list                → 결제 기록 목록
  * POST /api/admin {do:"freekey", days}   → 무료 열쇠 발급(세 서비스 공용)
  */
-import { ADMIN_COOKIE, isAdmin, listRecords, same, setCookie, sign, SECRET } from "./_lib.js";
+import { ADMIN_COOKIE, isAdmin, KEEP_DAYS, keepUntil, listRecords, same, setCookie, sign, SECRET } from "./_lib.js";
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
@@ -45,8 +45,13 @@ export default async function handler(req, res) {
   if (act === "me") { res.status(200).json({ ok: true }); return; }
 
   if (act === "list") {
-    try { res.status(200).json({ ok: true, rows: await listRecords(300) }); }
-    catch (e) { console.error("list fail", e?.message); res.status(200).json({ ok: true, rows: [], note: "아직 기록이 없습니다" }); }
+    try {
+      const rows = (await listRecords(1000)).map(r => ({ ...r, keepUntil: keepUntil(r.paidAt || r.at) }));
+      res.status(200).json({ ok: true, rows, keepDays: KEEP_DAYS });
+    } catch (e) {
+      console.error("list fail", e?.message);
+      res.status(200).json({ ok: true, rows: [], keepDays: KEEP_DAYS, note: "아직 기록이 없습니다" });
+    }
     return;
   }
 

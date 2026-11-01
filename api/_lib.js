@@ -64,6 +64,18 @@ export function isAdmin(req) {
   return !!(v && v.t === "admin");
 }
 
+/* ── 보관 기간 ─────────────────────────────
+ * 전자상거래법 제6조와 같은 법 시행령 제6조가 정한 기간입니다.
+ *   대금결제 및 재화 등의 공급에 관한 기록 ...... 5년
+ *   계약 또는 청약철회 등에 관한 기록 ............ 5년
+ *   소비자 불만 또는 분쟁처리에 관한 기록 ........ 3년
+ * 저희 기록은 결제·열람(청약철회 판단) 자료이므로 5년으로 둡니다.
+ * 기간이 지나면 api/cron-purge 가 날마다 돌며 지웁니다.
+ * ────────────────────────────────────────── */
+export const KEEP_DAYS = 365 * 5;
+export const keepUntil = at => (at || Date.now()) + KEEP_DAYS * 86400000;
+export const isExpired = rec => Date.now() > keepUntil(rec.paidAt || rec.at);
+
 /* 결제 기록 — 결제 한 건이 파일 하나. 동시에 써도 서로 덮지 않습니다 */
 export async function putRecord(rec) {
   const { put } = await import("@vercel/blob");
@@ -79,6 +91,12 @@ export async function getRecord(id) {
   if (!blobs.length) return null;
   const r = await fetch(blobs[0].url, { cache: "no-store" });
   return r.ok ? r.json() : null;
+}
+
+export async function delRecord(id) {
+  const { del, list } = await import("@vercel/blob");
+  const { blobs } = await list({ prefix: `pay/${id}.json`, limit: 1 });
+  if (blobs.length) await del(blobs[0].url);
 }
 
 export async function listRecords(limit = 200) {
