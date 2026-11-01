@@ -6,7 +6,12 @@
  * GET  /api/admin?do=list                → 결제 기록 목록
  * POST /api/admin {do:"freekey", days}   → 무료 열쇠 발급(세 서비스 공용)
  */
-import { ADMIN_COOKIE, isAdmin, KEEP_DAYS, keepUntil, listRecords, same, setCookie, sign, SECRET } from "./_lib.js";
+import {
+  ADMIN_COOKIE, isAdmin, KEEP_DAYS, KEEP_DAYS_INQ, keepUntil, keepUntilInq,
+  listRecords, listInquiries, getInquiry, putInquiry,
+  getConfig, putConfig, getRecord, putRecord,
+  same, setCookie, sign, SECRET,
+} from "./_lib.js";
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
@@ -52,6 +57,48 @@ export default async function handler(req, res) {
       console.error("list fail", e?.message);
       res.status(200).json({ ok: true, rows: [], keepDays: KEEP_DAYS, note: "아직 기록이 없습니다" });
     }
+    return;
+  }
+
+  /* ── 문의함 ─────────────────────────── */
+  if (act === "inq") {
+    try {
+      const rows = (await listInquiries(400)).map(q => ({ ...q, keepUntil: keepUntilInq(q.at) }));
+      res.status(200).json({ ok: true, rows, keepDays: KEEP_DAYS_INQ });
+    } catch (e) { console.error("inq fail", e?.message); res.status(200).json({ ok: true, rows: [] }); }
+    return;
+  }
+
+  if (req.method === "POST" && act === "inqsave") {
+    try {
+      const cur = await getInquiry(String(body.id || ""));
+      if (!cur) { res.status(404).json({ error: "그 문의가 없습니다" }); return; }
+      cur.done = !!body.done;
+      cur.memo = String(body.memo ?? cur.memo ?? "").slice(0, 1000);
+      await putInquiry(cur);
+      res.status(200).json({ ok: true });
+    } catch (e) { console.error("inqsave fail", e?.message); res.status(500).json({ error: "저장하지 못했습니다" }); }
+    return;
+  }
+
+  /* ── 환불 표시 — 포트원에서 환불한 뒤 여기에 적어 두면 매출이 맞습니다 ── */
+  if (req.method === "POST" && act === "refund") {
+    try {
+      const cur = await getRecord(String(body.id || ""));
+      if (!cur) { res.status(404).json({ error: "그 결제가 없습니다" }); return; }
+      cur.refunded = !!body.refunded;
+      cur.refundedAt = cur.refunded ? (cur.refundedAt || Date.now()) : null;
+      await putRecord(cur);
+      res.status(200).json({ ok: true });
+    } catch (e) { console.error("refund fail", e?.message); res.status(500).json({ error: "저장하지 못했습니다" }); }
+    return;
+  }
+
+  /* ── 설정 ───────────────────────────── */
+  if (act === "cfg") { res.status(200).json({ ok: true, cfg: await getConfig() }); return; }
+  if (req.method === "POST" && act === "cfgsave") {
+    try { res.status(200).json({ ok: true, cfg: await putConfig(body.cfg || {}) }); }
+    catch (e) { console.error("cfgsave fail", e?.message); res.status(500).json({ error: "저장하지 못했습니다" }); }
     return;
   }
 

@@ -72,9 +72,12 @@ export function isAdmin(req) {
  * 저희 기록은 결제·열람(청약철회 판단) 자료이므로 5년으로 둡니다.
  * 기간이 지나면 api/cron-purge 가 날마다 돌며 지웁니다.
  * ────────────────────────────────────────── */
-export const KEEP_DAYS = 365 * 5;
+export const KEEP_DAYS = 365 * 5;        // 결제 기록
+export const KEEP_DAYS_INQ = 365 * 3;    // 문의 — 소비자 불만·분쟁처리 기록 3년
 export const keepUntil = at => (at || Date.now()) + KEEP_DAYS * 86400000;
+export const keepUntilInq = at => (at || Date.now()) + KEEP_DAYS_INQ * 86400000;
 export const isExpired = rec => Date.now() > keepUntil(rec.paidAt || rec.at);
+export const isExpiredInq = rec => Date.now() > keepUntilInq(rec.at);
 
 /* 결제 기록 — 결제 한 건이 파일 하나. 동시에 써도 서로 덮지 않습니다 */
 export async function putRecord(rec) {
@@ -107,4 +110,74 @@ export async function listRecords(limit = 200) {
     catch { return null; }
   }));
   return out.filter(Boolean).sort((a, b) => (b.at || 0) - (a.at || 0));
+}
+
+/* ── 문의 ─────────────────────────────────
+ * 손님이 남긴 문의. 결제 기록과 같은 자리에서 보도록 둡니다.
+ * 보관은 3년(소비자 불만·분쟁처리 기록).
+ * ────────────────────────────────────────── */
+export async function putInquiry(inq) {
+  const { put } = await import("@vercel/blob");
+  await put(`inq/${inq.id}.json`, JSON.stringify(inq), {
+    access: "public", contentType: "application/json",
+    addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 0,
+  });
+}
+
+export async function getInquiry(id) {
+  const { list } = await import("@vercel/blob");
+  const { blobs } = await list({ prefix: `inq/${id}.json`, limit: 1 });
+  if (!blobs.length) return null;
+  const r = await fetch(blobs[0].url, { cache: "no-store" });
+  return r.ok ? r.json() : null;
+}
+
+export async function delInquiry(id) {
+  const { del, list } = await import("@vercel/blob");
+  const { blobs } = await list({ prefix: `inq/${id}.json`, limit: 1 });
+  if (blobs.length) await del(blobs[0].url);
+}
+
+export async function listInquiries(limit = 300) {
+  const { list } = await import("@vercel/blob");
+  const { blobs } = await list({ prefix: "inq/", limit });
+  const out = await Promise.all(blobs.map(async b => {
+    try { const r = await fetch(b.url, { cache: "no-store" }); return r.ok ? await r.json() : null; }
+    catch { return null; }
+  }));
+  return out.filter(Boolean).sort((a, b) => (b.at || 0) - (a.at || 0));
+}
+
+/* ── 설정 ─────────────────────────────────
+ * 결제 수수료율처럼 사장님이 바꾸는 값. 기기가 바뀌어도 남도록 한곳에 둡니다.
+ * ────────────────────────────────────────── */
+const CFG_DEFAULT = {
+  feeRate: 3.4,        // 카드 수수료율 (%) — 부가세 별도
+  feeVat: true,        // 수수료에 부가세 10%가 붙는가
+  yearlyFee: 110000,   // 연관리비 (원)
+  vatRate: 10,         // 매출 부가가치세율 (%) — 간이과세자면 0 으로 두십시오
+};
+
+export async function getConfig() {
+  try {
+    const { list } = await import("@vercel/blob");
+    const { blobs } = await list({ prefix: "cfg/main.json", limit: 1 });
+    if (!blobs.length) return { ...CFG_DEFAULT };
+    const r = await fetch(blobs[0].url, { cache: "no-store" });
+    return r.ok ? { ...CFG_DEFAULT, ...(await r.json()) } : { ...CFG_DEFAULT };
+  } catch { return { ...CFG_DEFAULT }; }
+}
+
+export async function putConfig(patch) {
+  const { put } = await import("@vercel/blob");
+  const next = { ...(await getConfig()), ...patch };
+  next.feeRate = Math.min(20, Math.max(0, Number(next.feeRate) || 0));
+  next.vatRate = Math.min(20, Math.max(0, Number(next.vatRate) || 0));
+  next.yearlyFee = Math.min(10000000, Math.max(0, Number(next.yearlyFee) || 0));
+  next.feeVat = !!next.feeVat;
+  await put("cfg/main.json", JSON.stringify(next), {
+    access: "public", contentType: "application/json",
+    addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 0,
+  });
+  return next;
 }

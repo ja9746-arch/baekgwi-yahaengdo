@@ -46,6 +46,10 @@
   .t-open{background:rgba(220,120,60,.18);color:#f0a87a;border:1px solid rgba(220,120,60,.4)}
   .t-new{background:rgba(120,190,120,.15);color:#9fd49a;border:1px solid rgba(120,190,120,.38)}
   .t-err{background:rgba(220,70,70,.18);color:#f0908a;border:1px solid rgba(220,70,70,.42)}
+  .t-ref{background:rgba(130,130,150,.18);color:#b3b3c6;border:1px solid rgba(130,130,150,.4)}
+  .lnk{background:none;border:0;padding:4px 0 0;margin:0;color:#8d7c63;font-size:11.5px;
+       text-decoration:underline;cursor:pointer;font-family:inherit;display:block}
+  .lnk:hover{color:#cfae6c;background:none}
   .empty{color:#8d7c63;font-size:13.5px;line-height:1.9}
   .note{font-size:12.5px;color:#7d6e58;line-height:1.85;margin-top:14px}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -60,6 +64,28 @@
   .sum{font-size:13px;color:#8d7c63;margin:0 0 12px;line-height:1.8}
   .sum b{color:#cfae6c;font-weight:400}
   .keep{font-size:11.5px;color:#6f6253;white-space:nowrap;margin-top:4px}
+  .money{display:grid;grid-template-columns:minmax(0,1fr);gap:1px;background:rgba(200,150,70,.16);
+         border:1px solid rgba(200,150,70,.2);border-radius:11px;overflow:hidden;margin:16px 0}
+  .money div{background:#1b100d;padding:13px 15px;display:flex;justify-content:space-between;
+         align-items:baseline;gap:12px;font-size:14.5px}
+  .money div span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .money .big{background:#241510}
+  .money .big span:first-child{color:#dcb972}
+  .money .big span:last-child{color:#f0cf86;font-size:19px;font-family:'Song Myung',serif}
+  .money .minus span:last-child{color:#d8947e}
+  .money .muted{color:#8d7c63}
+  .money .muted span:last-child{color:#8d7c63}
+  .qcard{border:1px solid rgba(200,150,70,.26);border-radius:11px;padding:15px 16px;margin-bottom:12px;background:#190f0c}
+  .qcard.done{opacity:.55}
+  .qhead{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:13.5px;color:#a2917a;margin-bottom:9px}
+  .qhead b{color:#e0cfa8;font-weight:400;font-size:15px}
+  .qbody{font-size:14.5px;line-height:1.85;white-space:pre-wrap;margin:0 0 12px;color:#ddd0b8}
+  .qcard textarea{width:100%;min-height:62px;padding:10px 12px;border-radius:8px;
+         border:1px solid rgba(200,150,70,.3);background:#0d0605;color:#f0e6d2;
+         font-family:inherit;font-size:14.5px;resize:vertical;margin-bottom:10px}
+  .qcard .row{gap:8px}
+  .qcard button{padding:8px 14px;font-size:13.5px}
+  .mini{padding:6px 11px!important;font-size:12.5px!important}
   a{color:#d9b45f}
   [hidden]{display:none!important}
 </style>
@@ -117,6 +143,7 @@
           <option value="new">열람 안 함</option>
           <option value="open">열람함</option>
           <option value="err">오류</option>
+          <option value="ref">환불함</option>
         </select>
         <div class="dates wide">
           <input id="f1" type="date" aria-label="시작일">
@@ -136,16 +163,57 @@
         열람 안 함 → 환불해 주셔도 됩니다.<br>
         열람함 → 방침대로 환불이 제한됩니다.<br>
         오류 → 손님 잘못이 아니니 환불해 주십시오.<br>
-        환불 버튼은 <b style="color:#a2917a;font-weight:400">포트원</b>에서 누르십니다. 여기엔 일부러 두지 않았습니다.
+        환불 버튼은 <b style="color:#a2917a;font-weight:400">결제대행사</b>에서 누르십니다. 여기엔 일부러 두지 않았습니다.<br>
+        환불하신 뒤 <b style="color:#a2917a;font-weight:400">'환불했다고 표시'</b>를 눌러 두시면 매출에서 빠집니다.
       </p>
+    </section>
+
+    <section class="card">
+      <h2>매출</h2>
+      <div class="row" style="margin-bottom:6px">
+        <select id="mon" aria-label="달 고르기"></select>
+        <button id="cfgBtn" type="button" class="quiet mini">수수료 설정</button>
+      </div>
+
+      <div id="cfgBox" hidden style="margin-top:14px;padding:15px;border:1px dashed rgba(214,166,80,.4);border-radius:10px">
+        <label for="cFee">카드 수수료율 (%) — 부가세 별도</label>
+        <input id="cFee" type="number" step="0.01" min="0" max="20" inputmode="decimal">
+        <label for="cVat">매출 부가가치세율 (%) — 간이과세자면 0</label>
+        <input id="cVat" type="number" step="1" min="0" max="20" inputmode="numeric">
+        <label for="cYear">연관리비 (원)</label>
+        <input id="cYear" type="number" step="1000" min="0" inputmode="numeric">
+        <button id="cfgSave" type="button">저장</button>
+        <span class="note" style="margin-left:10px" id="cfgMsg"></span>
+        <p class="note">
+          신규 가맹점은 일반 요율 3.4%로 시작하지만, 영세·중소 우대 등급이 반기마다
+          자동 반영되고 차액은 환급됩니다. 등급이 바뀌면 이 값을 고치십시오.
+        </p>
+      </div>
+
+      <div id="byService" style="margin-top:16px"></div>
+      <div class="money" id="moneyBox"></div>
+      <p class="note" id="moneyNote"></p>
+    </section>
+
+    <section class="card">
+      <h2>문의함</h2>
+      <div class="row" style="margin-bottom:14px">
+        <button id="qReload" type="button" class="quiet">새로 보기</button>
+        <label style="margin:0;display:flex;gap:7px;align-items:center;font-size:13.5px;color:#a2917a">
+          <input id="qHideDone" type="checkbox" style="width:auto;margin:0" checked> 처리한 것 숨기기
+        </label>
+        <span class="note" style="margin:0" id="qCount"></span>
+      </div>
+      <div id="qRows"></div>
     </section>
 
     <section class="card">
       <h2>자료 보관</h2>
       <p class="note" style="margin-top:0">
-        결제 기록은 <b style="color:#a2917a;font-weight:400">5년</b> 보관하고 지웁니다.
+        결제 기록은 <b style="color:#a2917a;font-weight:400">5년</b>,
+        문의는 <b style="color:#a2917a;font-weight:400">3년</b> 보관하고 지웁니다.
         전자상거래법 제6조와 같은 법 시행령 제6조가 정한 기간입니다
-        (대금결제·재화 공급 기록 5년, 계약·청약철회 기록 5년).<br>
+        (대금결제·재화 공급 5년, 계약·청약철회 5년, 소비자 불만·분쟁처리 3년).<br>
         날마다 새벽에 저절로 돌면서 기간이 지난 것을 실제로 지웁니다.
         적어만 두고 안 지우면 거짓말이 되기 때문입니다.
       </p>
@@ -176,7 +244,7 @@ function show(on){ $('#loginCard').hidden = on; $('#panel').hidden = !on; }
 $('#loginBtn').onclick = async () => {
   const m = $('#loginMsg'); m.className='msg'; m.textContent='확인하는 중…';
   const r = await api('/api/admin', { do:'login', id:$('#aid').value, pw:$('#apw').value });
-  if (r.ok) { m.textContent=''; $('#apw').value=''; show(true); load(); }
+  if (r.ok) { m.textContent=''; $('#apw').value=''; show(true); boot(); }
   else { m.className='msg bad'; m.textContent = r.error || '들어가지 못했습니다'; }
 };
 $('#apw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); });
@@ -221,7 +289,7 @@ function fmt(ms){
   return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-function stateOf(x){ return x.error ? 'err' : (x.openedAt ? 'open' : 'new'); }
+function stateOf(x){ return x.refunded ? 'ref' : (x.error ? 'err' : (x.openedAt ? 'open' : 'new')); }
 
 function filtered(){
   const q = $('#fq').value.trim().toLowerCase();
@@ -244,7 +312,9 @@ async function load(){
   if (!r.ok) { $('#count').textContent=''; $('#sum').textContent='';
     $('#rows').innerHTML = '<p class="empty">'+(r.error||'불러오지 못했습니다')+'</p>'; return; }
   ALL = r.rows || [];
+  fillMonths();
   draw();
+  money();
 }
 
 function draw(){
@@ -263,11 +333,14 @@ function draw(){
     box.innerHTML = '<p class="empty">찾으시는 조건에 맞는 것이 없습니다.</p>';
     return;
   }
-  const money = rows.reduce((a,x)=>a+(Number(x.amount)||0),0);
+  const live  = rows.filter(x=>!x.refunded);
+  const money = live.reduce((a,x)=>a+(Number(x.amount)||0),0);
   const nOpen = rows.filter(x=>stateOf(x)==='open').length;
   const nErr  = rows.filter(x=>stateOf(x)==='err').length;
-  $('#sum').innerHTML = '합계 <b>' + money.toLocaleString('ko-KR') + '원</b> · 열람함 <b>'
-    + nOpen + '건</b> · 열람 안 함 <b>' + (rows.length-nOpen-nErr) + '건</b> · 오류 <b>' + nErr + '건</b>';
+  const nRef  = rows.filter(x=>x.refunded).length;
+  $('#sum').innerHTML = '환불 뺀 합계 <b>' + money.toLocaleString('ko-KR') + '원</b> · 열람함 <b>'
+    + nOpen + '건</b> · 열람 안 함 <b>' + (rows.length-nOpen-nErr-nRef) + '건</b> · 오류 <b>' + nErr + '건</b>'
+    + (nRef ? ' · 환불 <b>' + nRef + '건</b>' : '');
 
   const t = document.createElement('table');
   t.innerHTML = '<thead><tr><th>결제번호 · 서비스</th><th>금액 · 결제시각</th><th>상태</th></tr></thead>';
@@ -286,12 +359,25 @@ function draw(){
 
     const c3 = document.createElement('td');
     const g = document.createElement('span');
-    if (x.error)        { g.className='tag t-err';  g.textContent='오류'; }
+    if (x.refunded)     { g.className='tag t-ref';  g.textContent='환불함'; }
+    else if (x.error)   { g.className='tag t-err';  g.textContent='오류'; }
     else if (x.openedAt){ g.className='tag t-open'; g.textContent='열람함'; }
     else                { g.className='tag t-new';  g.textContent='열람 안 함'; }
     c3.append(g);
-    if (x.openedAt && !x.error) c3.append(small(fmt(x.openedAt)));
-    if (x.error) c3.append(small(x.error));
+    if (x.openedAt && !x.error && !x.refunded) c3.append(small(fmt(x.openedAt)));
+    if (x.error && !x.refunded) c3.append(small(x.error));
+
+    /* 포트원에서 환불한 뒤 여기에 적어 두면 매출에서 빠집니다 */
+    const mark = document.createElement('button');
+    mark.type='button'; mark.className='lnk';
+    mark.textContent = x.refunded ? '환불 표시 지우기' : '환불했다고 표시';
+    mark.onclick = async () => {
+      mark.textContent = '저장하는 중…';
+      const r = await api('/api/admin', { do:'refund', id:x.id, refunded:!x.refunded });
+      if (r.ok) { x.refunded = !x.refunded; draw(); money(); }
+      else { mark.textContent = r.error || '실패'; }
+    };
+    c3.append(mark);
     if (x.keepUntil) c3.append(small(daysLeft(x.keepUntil),'keep'));
 
     tr.append(c1, c2, c3); tb.append(tr);
@@ -299,6 +385,135 @@ function draw(){
   const sc = document.createElement('div'); sc.className='scroll';
   t.append(tb); sc.append(t); box.append(sc);
 }
+
+/* ── 매출 ─────────────────────────────── */
+let CFG = { feeRate:3.4, feeVat:true, yearlyFee:110000, vatRate:10 };
+const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+const monKey = ms => { const d=new Date(ms); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); };
+const monLabel = k => { const [y,m]=k.split('-'); return y+'년 '+Number(m)+'월'; };
+
+function fillMonths(){
+  const sel = $('#mon'); const keep = sel.value;
+  const set = new Set(ALL.map(x => monKey(x.paidAt||x.at)));
+  set.add(monKey(Date.now()));
+  const keys = [...set].sort().reverse();
+  sel.textContent = '';
+  const all = document.createElement('option'); all.value='*'; all.textContent='전체 기간'; sel.append(all);
+  keys.forEach(k => { const o=document.createElement('option'); o.value=k; o.textContent=monLabel(k); sel.append(o); });
+  sel.value = keep && [...sel.options].some(o=>o.value===keep) ? keep : (keys[0] || '*');
+}
+
+function money(){
+  const k = $('#mon').value || '*';
+  const rows = ALL.filter(x => k==='*' || monKey(x.paidAt||x.at)===k);
+  const live = rows.filter(x => !x.refunded);
+  const back = rows.filter(x => x.refunded);
+
+  /* 서비스별 */
+  const bs = $('#byService'); bs.textContent='';
+  const order = ['사주','타로','관상'];
+  const t = document.createElement('table');
+  t.innerHTML = '<thead><tr><th>서비스</th><th>건수</th><th>매출</th></tr></thead>';
+  const tb = document.createElement('tbody');
+  let any = false;
+  order.forEach(name => {
+    const g = live.filter(x => x.service === name);
+    if (!g.length) return;
+    any = true;
+    const tr = document.createElement('tr');
+    const td = (v,c)=>{const d=document.createElement('td');if(c)d.className=c;d.textContent=v;return d};
+    tr.append(td('백귀'+name), td(g.length+'건','num'), td(won(g.reduce((a,x)=>a+(+x.amount||0),0)),'num'));
+    tb.append(tr);
+  });
+  if (any) { const sc=document.createElement('div'); sc.className='scroll'; t.append(tb); sc.append(t); bs.append(sc); }
+
+  /* 돈 계산 */
+  const gross = live.reduce((a,x)=>a+(+x.amount||0),0);
+  const refund = back.reduce((a,x)=>a+(+x.amount||0),0);
+  const feePct = (CFG.feeRate/100) * (CFG.feeVat ? 1.1 : 1);
+  const fee = gross * feePct;
+  const net = gross - fee;
+  const vat = CFG.vatRate ? gross * (CFG.vatRate/100) / (1 + CFG.vatRate/100) : 0;
+
+  const box = $('#moneyBox'); box.textContent='';
+  const line = (a,b,cls) => { const d=document.createElement('div'); if(cls)d.className=cls;
+    const x=document.createElement('span'); x.textContent=a;
+    const y=document.createElement('span'); y.textContent=b; d.append(x,y); box.append(d); };
+
+  if (!rows.length) {
+    line('이 달에는 결제가 없습니다','—','muted');
+    $('#moneyNote').textContent = '';
+    return;
+  }
+  line('판매', live.length + '건');
+  line('매출', won(gross));
+  if (back.length) line('환불 (' + back.length + '건)', '-' + won(refund), 'minus');
+  line('카드 수수료 (' + CFG.feeRate + '%' + (CFG.feeVat ? ' + 부가세' : '') + ')', '-' + won(fee), 'minus');
+  line('통장에 들어올 돈', won(net), 'big');
+  if (vat) line('이 중 낼 부가가치세 (' + CFG.vatRate + '%)', won(vat), 'muted');
+
+  $('#moneyNote').innerHTML =
+    '통장에 들어올 돈은 <b style="color:#a2917a;font-weight:400">부가가치세와 소득세를 내기 전</b> 금액입니다.'
+    + (CFG.yearlyFee ? ' 연관리비 ' + won(CFG.yearlyFee) + '은 해마다 따로 나갑니다.' : '')
+    + '<br>정확한 입금액은 결제대행사 정산 내역이 기준입니다. 여기 숫자는 어림셈입니다.';
+}
+
+$('#mon').onchange = money;
+$('#cfgBtn').onclick = () => { const b=$('#cfgBox'); b.hidden=!b.hidden; if(!b.hidden){
+  $('#cFee').value=CFG.feeRate; $('#cVat').value=CFG.vatRate; $('#cYear').value=CFG.yearlyFee; } };
+$('#cfgSave').onclick = async () => {
+  const m=$('#cfgMsg'); m.textContent='저장하는 중…';
+  const r = await api('/api/admin', { do:'cfgsave', cfg:{
+    feeRate:Number($('#cFee').value), vatRate:Number($('#cVat').value), yearlyFee:Number($('#cYear').value) } });
+  if (r.ok) { CFG=r.cfg; m.textContent='저장했습니다'; money(); setTimeout(()=>m.textContent='',2500); }
+  else m.textContent = r.error || '저장하지 못했습니다';
+};
+
+/* ── 문의함 ───────────────────────────── */
+let QS = [];
+async function loadQ(){
+  const r = await api('/api/admin?do=inq');
+  QS = r.ok ? (r.rows||[]) : [];
+  drawQ();
+}
+function drawQ(){
+  const box = $('#qRows'); box.textContent='';
+  const hide = $('#qHideDone').checked;
+  const rows = hide ? QS.filter(q=>!q.done) : QS;
+  const undone = QS.filter(q=>!q.done).length;
+  $('#qCount').textContent = QS.length ? (undone ? '안 읽은 문의 ' + undone + '건' : '모두 처리했습니다') : '';
+  if (!QS.length) { box.innerHTML = '<p class="empty">아직 들어온 문의가 없습니다.</p>'; return; }
+  if (!rows.length) { box.innerHTML = '<p class="empty">처리하지 않은 문의가 없습니다.</p>'; return; }
+
+  rows.forEach(q => {
+    const c = document.createElement('div'); c.className = 'qcard' + (q.done?' done':'');
+    const h = document.createElement('div'); h.className='qhead';
+    const nm = document.createElement('b'); nm.textContent = q.name || '이름 없음';
+    h.append(nm);
+    [q.contact, q.payId ? '결제번호 ' + q.payId : '', fmt(q.at)].filter(Boolean).forEach(v => {
+      const sp=document.createElement('span'); sp.textContent=v; h.append(sp); });
+    const bd = document.createElement('p'); bd.className='qbody'; bd.textContent = q.body;
+    const ta = document.createElement('textarea'); ta.placeholder='처리 메모 (손님에게는 안 보입니다)'; ta.value = q.memo||'';
+    const row = document.createElement('div'); row.className='row';
+    const save = document.createElement('button'); save.type='button'; save.className='quiet'; save.textContent='메모 저장';
+    const done = document.createElement('button'); done.type='button'; done.textContent = q.done ? '다시 열기' : '처리 완료';
+    const msg = document.createElement('span'); msg.className='note'; msg.style.margin='0';
+    const send = async (d) => {
+      msg.textContent='저장하는 중…';
+      const r = await api('/api/admin', { do:'inqsave', id:q.id, done:d, memo:ta.value });
+      if (r.ok) { q.done=d; q.memo=ta.value; msg.textContent=''; drawQ(); } else msg.textContent = r.error||'실패';
+    };
+    save.onclick = () => send(q.done);
+    done.onclick = () => send(!q.done);
+    row.append(save, done, msg);
+    c.append(h, bd, ta, row);
+    if (q.keepUntil) { const k=document.createElement('div'); k.className='keep'; k.textContent=daysLeft(q.keepUntil); c.append(k); }
+    box.append(c);
+  });
+}
+$('#qReload').onclick = loadQ;
+$('#qHideDone').onchange = drawQ;
+
 $('#reloadBtn').onclick = load;
 $('#clearBtn').onclick = () => { ['fq','fsvc','fst','f1','f2'].forEach(id=>{$('#'+id).value=''}); draw(); };
 ['fq','fsvc','fst','f1','f2'].forEach(id => {
@@ -314,7 +529,13 @@ $('#purgeBtn').onclick = async () => {
 };
 
 /* 이미 로그인돼 있으면 바로 열어준다 */
-api('/api/admin?do=me').then(r => { if (r.ok) { show(true); load(); } });
+async function boot(){
+  const c = await api('/api/admin?do=cfg');
+  if (c.ok && c.cfg) CFG = c.cfg;
+  await load();
+  await loadQ();
+}
+api('/api/admin?do=me').then(r => { if (r.ok) { show(true); boot(); } });
 </script>
 </body>
 </html>

@@ -81,6 +81,30 @@
   footer a{color:#b9a483;text-decoration:none}
   footer a:hover{color:#e8c87a}
 
+  /* 문의 */
+  .inq{background:#1a0f0c;padding-block:34px 40px;
+       padding-left:max(16px,env(safe-area-inset-left,0px));
+       padding-right:max(16px,env(safe-area-inset-right,0px));line-height:1.8}
+  .inqin{max-width:520px;margin:0 auto;text-align:center}
+  .inq h2{font-family:'Song Myung',serif;font-size:18px;color:#dcb972;margin:0 0 8px;letter-spacing:.04em}
+  .inq p.lead{font-size:13.5px;color:#8d7c63;margin:0 0 20px;line-height:1.85}
+  .inq label{display:block;text-align:left;font-size:12.5px;color:#a2917a;margin:0 0 5px}
+  .inq input,.inq textarea{width:100%;padding:11px 13px;margin-bottom:12px;border-radius:9px;
+       border:1px solid rgba(200,150,70,.32);background:#0d0605;color:#f0e6d2;
+       font-family:inherit;font-size:16px;min-width:0}
+  .inq textarea{min-height:92px;resize:vertical;line-height:1.75}
+  .inq input:focus,.inq textarea:focus{outline:2px solid #ffd77a;outline-offset:1px}
+  .inq .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:11px}
+  .inq button{width:100%;padding:13px;border-radius:9px;border:1px solid rgba(214,166,80,.6);
+       background:rgba(214,166,80,.12);color:#f0cf86;font-family:inherit;font-size:15.5px;cursor:pointer}
+  .inq button:hover{background:rgba(214,166,80,.24)}
+  .inq .msg{font-size:13.5px;margin-top:12px;min-height:1.3em;color:#9fd49a;line-height:1.8}
+  .inq .msg.bad{color:#f09a8a}
+  .trap{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+  .inq details{margin-top:16px;text-align:left}
+  .inq summary{font-size:13px;color:#8d7c63;cursor:pointer}
+  .inq details p{font-size:12.5px;color:#7d6e58;margin:9px 0 0;line-height:1.9}
+
   /* 모달 */
   .mask{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(3px);
         display:none;align-items:center;justify-content:center;padding:22px;z-index:50}
@@ -183,6 +207,38 @@
     <a class="hot" data-go="terms"   aria-label="이용약관"        style="left:21%;top:86.3%;width:12%;height:3.4%"></a>
     <a class="hot" data-go="privacy" aria-label="개인정보처리방침" style="left:37%;top:86.3%;width:23%;height:3.4%"></a>
     <a class="hot" data-go="refund"  aria-label="환불정책"        style="left:64%;top:86.3%;width:14%;height:3.4%"></a>
+  </section>
+
+  <section class="inq">
+    <div class="inqin">
+      <h2>문의하기</h2>
+      <p class="lead">풀이가 열리지 않거나, 환불이 필요하시거나,<br>그 밖에 묻고 싶은 것이 있으시면 남겨 주세요.</p>
+      <form id="inqForm" autocomplete="on" novalidate>
+        <div class="two">
+          <div>
+            <label for="iName">이름 <span style="color:#6f6253">(안 적으셔도 됩니다)</span></label>
+            <input id="iName" name="name" type="text" maxlength="40" autocomplete="name">
+          </div>
+          <div>
+            <label for="iPay">결제번호 <span style="color:#6f6253">(있으시면)</span></label>
+            <input id="iPay" name="payId" type="text" maxlength="80" autocapitalize="off" spellcheck="false">
+          </div>
+        </div>
+        <label for="iCon">답을 받으실 곳 · 전화번호나 이메일</label>
+        <input id="iCon" name="contact" type="text" maxlength="120" autocomplete="email" required>
+        <label for="iBody">문의 내용</label>
+        <textarea id="iBody" name="body" maxlength="2000" required></textarea>
+        <input class="trap" id="iWeb" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button type="submit" id="iBtn">보내기</button>
+        <div class="msg" id="iMsg" role="status" aria-live="polite"></div>
+      </form>
+      <details>
+        <summary>남기신 내용은 어떻게 되나요?</summary>
+        <p>적어 주신 연락처와 내용은 답변을 드리는 데에만 씁니다.
+           소비자 불만·분쟁처리 기록으로 3년 보관한 뒤 지웁니다.
+           급하시면 1866-0423 으로 전화 주셔도 됩니다.</p>
+      </details>
+    </div>
   </section>
 
   <footer>
@@ -308,6 +364,37 @@ document.querySelectorAll('[data-go]').forEach(el=>{
     setTimeout(()=>{at=(at+per)%all.length; draw()},500);
   },8000);
 })();
+/* 문의 보내기 */
+(function(){
+  const f=document.getElementById('inqForm'); if(!f) return;
+  const msg=document.getElementById('iMsg'), btn=document.getElementById('iBtn');
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const payload={
+      name:f.name.value, contact:f.contact.value,
+      payId:f.payId.value, body:f.body.value, website:f.website.value };
+    if(!payload.contact.trim()){ msg.className='msg bad'; msg.textContent='답을 받으실 곳을 적어 주세요.'; f.contact.focus(); return; }
+    if(payload.body.trim().length<5){ msg.className='msg bad'; msg.textContent='문의 내용을 조금 더 적어 주세요.'; f.body.focus(); return; }
+    btn.disabled=true; msg.className='msg'; msg.textContent='보내는 중…';
+    try{
+      const r=await fetch('/api/inquiry',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+      let j={}; try{ j=await r.json(); }catch{}
+      if(r.ok&&j.ok){
+        msg.className='msg';
+        msg.textContent='잘 받았습니다. 적어 주신 곳으로 답을 드리겠습니다.';
+        f.reset();
+      } else {
+        msg.className='msg bad';
+        msg.textContent=(j.error||'보내지 못했습니다')+' · 1866-0423 으로 전화 주셔도 됩니다.';
+      }
+    }catch{
+      msg.className='msg bad';
+      msg.textContent='보내지 못했습니다. 1866-0423 으로 전화 주시거나 ja9746@naver.com 으로 보내 주세요.';
+    }
+    btn.disabled=false;
+  });
+})();
+
 /* 숨은 문 — 푸터의 '온미라이프'를 3초 안에 다섯 번 치면 관리 화면으로 */
 (function(){
   const el=document.getElementById('omni'); if(!el) return;

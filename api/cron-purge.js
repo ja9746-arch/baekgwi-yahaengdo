@@ -5,7 +5,7 @@
  *
  * 버셀 크론만 부를 수 있습니다(CRON_SECRET). 관리자도 손으로 부를 수 있습니다.
  */
-import { delRecord, isExpired, listRecords, KEEP_DAYS, isAdmin } from "./_lib.js";
+import { delRecord, delInquiry, isExpired, isExpiredInq, listRecords, listInquiries, KEEP_DAYS, KEEP_DAYS_INQ, isAdmin } from "./_lib.js";
 
 export default async function handler(req, res) {
   res.setHeader("cache-control", "no-store");
@@ -19,8 +19,18 @@ export default async function handler(req, res) {
     const rows = await listRecords(1000);
     const old = rows.filter(isExpired);
     for (const r of old) await delRecord(r.id);
-    console.log(`purge: ${old.length}건 삭제 (보관 ${KEEP_DAYS}일)`);
-    res.status(200).json({ ok: true, deleted: old.length, kept: rows.length - old.length, keepDays: KEEP_DAYS });
+
+    const qs = await listInquiries(1000);
+    const oldQ = qs.filter(isExpiredInq);
+    for (const q of oldQ) await delInquiry(q.id);
+
+    console.log(`purge: 결제 ${old.length}건(보관 ${KEEP_DAYS}일), 문의 ${oldQ.length}건(보관 ${KEEP_DAYS_INQ}일) 삭제`);
+    res.status(200).json({
+      ok: true, deleted: old.length + oldQ.length,
+      pay: old.length, inq: oldQ.length,
+      kept: (rows.length - old.length) + (qs.length - oldQ.length),
+      keepDays: KEEP_DAYS, keepDaysInq: KEEP_DAYS_INQ,
+    });
   } catch (e) {
     console.error("purge fail", e?.message);
     res.status(500).json({ error: "지우지 못했습니다" });
