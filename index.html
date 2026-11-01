@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>백귀야행도 — 사주 · 타로 · 관상</title>
+<meta name="description" content="사주로 타고난 운명을 보고, 타로로 지금 품은 질문의 답을 찾고, 관상으로 얼굴에 드러난 기운을 읽는다. 백귀야행도.">
+<meta name="theme-color" content="#150a09">
+<meta property="og:type" content="website">
+<meta property="og:title" content="백귀야행도 — 사주 · 타로 · 관상">
+<meta property="og:description" content="운명의 답이 머무는 곳, 백귀야행도.">
+<meta property="og:image" content="img/s1-hero.webp">
+<link rel="icon" href="img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Song+Myung&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#150a09;color:#e8d9b5}
+  body{font-family:'Gowun Batang',serif;-webkit-text-size-adjust:100%}
+  img{display:block;width:100%;height:auto}
+  .wrap{max-width:720px;margin:0 auto;background:#150a09}
+  .sec{position:relative;line-height:0}
+  /* 그림끼리 맞닿는 자리를 어둠으로 녹여 경계선을 지운다 */
+  .fadeT img{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 8%);
+             mask-image:linear-gradient(to bottom,transparent 0,#000 8%)}
+  .fadeB img{-webkit-mask-image:linear-gradient(to top,transparent 0,#000 8%);
+             mask-image:linear-gradient(to top,transparent 0,#000 8%)}
+  .fadeTB img{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 5%,#000 92%,transparent 100%);
+              mask-image:linear-gradient(to bottom,transparent 0,#000 5%,#000 92%,transparent 100%)}
+  /* 이미지 위 투명 클릭 영역 */
+  .hot{position:absolute;display:block;border-radius:14px;
+       -webkit-tap-highlight-color:transparent;cursor:pointer;
+       background:transparent;border:0;padding:0;outline:0}
+  .hot:focus-visible{outline:2px solid #ffd77a;outline-offset:2px}
+  @media (hover:hover){.hot:not(.cta):not(.cta2):hover{background:rgba(255,200,90,.12)}}
+  .hot:not(.cta):not(.cta2):active{background:rgba(255,200,90,.2)}
+
+  /* 버튼 빛 효과 — 그림 위에 빛을 더하는 방식이라 그림을 가리지 않습니다 */
+  .cta,.cta2{overflow:hidden}
+  .cta{border-radius:999px}
+  .cta2{border-radius:13px}
+
+  /* 숨쉬는 빛 */
+  .cta::before,.cta2::before{content:"";position:absolute;inset:0;border-radius:inherit;
+    background:radial-gradient(ellipse at 50% 50%,var(--g,rgba(255,206,110,.95)) 0%,transparent 70%);
+    mix-blend-mode:screen;opacity:.16;pointer-events:none;
+    animation:breathe 2.8s ease-in-out infinite}
+  .cta2::before{animation-duration:3.8s}
+
+  /* 쓸고 지나가는 빛줄기 */
+  .cta::after,.cta2::after{content:"";position:absolute;top:-70%;bottom:-70%;width:19%;left:-30%;
+    background:linear-gradient(90deg,transparent 0%,rgba(255,246,222,.72) 45%,rgba(255,226,168,.58) 60%,transparent 100%);
+    transform:skewX(-17deg);filter:blur(4px);mix-blend-mode:screen;pointer-events:none;
+    animation:sweep 4.6s cubic-bezier(.35,0,.25,1) infinite}
+  .cta2::after{animation-duration:6.2s;opacity:.8}
+
+  @keyframes breathe{0%,100%{opacity:.14}50%{opacity:.62}}
+  @keyframes sweep{0%{left:-30%}20%{left:118%}100%{left:118%}}
+
+  /* 차례로 넘어가게 */
+  .d1::before,.d1::after{animation-delay:0s}
+  .d2::before,.d2::after{animation-delay:.6s}
+  .d3::before,.d3::after{animation-delay:1.2s}
+
+  /* 누를 때 */
+  .cta:active::before,.cta2:active::before{opacity:.85;animation:none}
+  @media (hover:hover){
+    .cta:hover::before,.cta2:hover::before{opacity:.7;animation:none}
+    .cta:hover::after,.cta2:hover::after{animation-duration:1.3s}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .cta::before,.cta2::before{animation:none;opacity:.34}
+    .cta::after,.cta2::after{display:none}
+  }
+
+  /* 푸터 */
+  footer{padding:18px 22px 44px;text-align:center;font-size:13px;line-height:1.9;
+         color:#9a8a72;background:#150a09;word-break:keep-all}
+  footer .brand{font-family:'Song Myung',serif;font-size:16px;color:#d9b45f;letter-spacing:.14em;margin-bottom:12px}
+  footer a{color:#b9a483;text-decoration:none}
+  footer a:hover{color:#e8c87a}
+
+  /* 모달 */
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(3px);
+        display:none;align-items:center;justify-content:center;padding:22px;z-index:50}
+  .mask.on{display:flex}
+  .modal{max-width:460px;width:100%;max-height:82vh;overflow:auto;background:linear-gradient(#17090b,#0d0507);
+         border:1px solid rgba(214,166,80,.55);border-radius:16px;padding:26px 24px 20px;
+         box-shadow:0 0 42px rgba(190,120,40,.3);line-height:1.8}
+  .modal h3{font-family:'Song Myung',serif;word-break:keep-all;margin:0 0 14px;font-size:18px;color:#f0cf86;line-height:1.5}
+  .modal p{margin:0;word-break:keep-all;font-size:15px;color:#ddcdae;white-space:pre-line}
+  .modal button{margin-top:22px;width:100%;padding:12px;background:transparent;
+         border:1px solid rgba(214,166,80,.6);border-radius:10px;color:#e8c87a;
+         font-family:'Gowun Batang',serif;font-size:15px;cursor:pointer}
+  .modal button:hover{background:rgba(214,166,80,.14)}
+  /* 오늘의 말 */
+  .saywrap{position:relative;container-type:inline-size;line-height:0}
+  .sayText,.sayWho{position:absolute;left:12%;right:12%;margin:0;text-align:center;
+        font-family:'Song Myung',serif;transition:opacity .5s;line-height:1.62;
+        word-break:keep-all;overflow-wrap:break-word}
+  .sayText{top:58.6%;height:21.6%;display:flex;align-items:center;justify-content:center;
+        font-size:17px;font-size:3.65cqw;color:#f7e9c5;text-wrap:balance;
+        text-shadow:0 0 18px rgba(255,186,86,.45),0 2px 6px rgba(0,0,0,.65)}
+  .sayWho{top:83%;height:5.9%;display:flex;align-items:center;justify-content:center;
+        font-size:11px;font-size:2cqw;color:#d8ad63;letter-spacing:.08em}
+  .fade{opacity:0}
+
+  /* 후기 */
+  .revbody{background:#150a09;padding-block:4px 30px;
+           padding-left:max(16px,env(safe-area-inset-left,0px));
+           padding-right:max(16px,env(safe-area-inset-right,0px));
+           display:flex;flex-direction:column;gap:16px;line-height:1.75}
+  .rev{background:linear-gradient(#f3e8cd,#e8dabb);border:1px solid #b8933f;
+       border-radius:10px;padding:16px 18px 12px;
+       box-shadow:0 2px 14px rgba(0,0,0,.45);transition:opacity .5s}
+  .rev .stars{color:#d79a26;font-size:14px;letter-spacing:.14em}
+  .rev p{margin:10px 0 12px;word-break:keep-all;font-size:14.5px;color:#3b2d1d}
+  .rev .from{border-top:1px solid rgba(150,110,45,.35);padding-top:10px;
+             font-family:'Song Myung',serif;font-size:13.5px;color:#6b4f22}
+  .revwrite{display:block;text-align:center;margin-top:6px;padding:13px;
+            border:1px solid rgba(214,166,80,.55);border-radius:10px;
+            color:#e8c87a;text-decoration:none;font-size:15px;background:rgba(0,0,0,.25)}
+  .revwrite:hover{background:rgba(214,166,80,.14)}
+  @media (prefers-reduced-motion:reduce){.sayText,.sayWho,.rev{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 1. 대문 -->
+  <section class="sec fadeB">
+    <img src="img/s1-hero.webp" alt="백귀야행도 — 사주로 타고난 운명을 보고, 타로로 지금 품은 질문의 답을 찾고, 관상으로 얼굴에 드러난 기운을 읽는다" fetchpriority="high">
+    <a class="hot cta d1" data-go="gwansang" aria-label="백귀관상 보기" style="--g:rgba(255,206,110,.9);left:4.5%;top:77%;width:24.5%;height:6%"></a>
+    <a class="hot cta d2" data-go="saju"     aria-label="백귀사주 보기" style="--g:rgba(255,222,130,.95);left:32%;top:77%;width:36%;height:6%"></a>
+    <a class="hot cta d3" data-go="tarot"    aria-label="백귀타로 보기" style="--g:rgba(255,120,110,.9);left:70%;top:77%;width:25%;height:6%"></a>
+  </section>
+
+  <!-- 2. 무슨 고민으로 왔소 -->
+  <section class="sec fadeTB">
+    <img src="img/s2-gomin.webp" alt="무슨 고민으로 왔소?" loading="lazy">
+    <a class="hot cta2 d1" data-go="tarot"    aria-label="재회할 수 있을까"  style="left:4%;top:35.3%;width:44%;height:10.2%"></a>
+    <a class="hot cta2 d2" data-go="saju"     aria-label="내 사주가 궁금해"  style="left:52%;top:35.3%;width:44%;height:10.2%"></a>
+    <a class="hot cta2 d2" data-go="tarot"    aria-label="우리 궁합 어때"    style="left:4%;top:52.8%;width:44%;height:10.2%"></a>
+    <a class="hot cta2 d3" data-go="tarot"    aria-label="헤어질까 말까"     style="left:52%;top:52.8%;width:44%;height:10.2%"></a>
+    <a class="hot cta2 d1" data-go="tarot"    aria-label="이거 썸 맞아"      style="left:4%;top:70.1%;width:44%;height:10.2%"></a>
+    <a class="hot cta2 d3" data-go="saju"     aria-label="이직할까 버틸까"   style="left:52%;top:70.1%;width:44%;height:10.2%"></a>
+  </section>
+
+  <!-- 3. 무엇을 보게 되는가 -->
+  <section class="sec fadeTB">
+    <img src="img/s3-what.webp" alt="백귀야행도에서 무엇을 보게 되는가 — 관상 · 사주 · 타로 세 가지 점법 안내" loading="lazy">
+  </section>
+
+  <!-- 4. 처음이라면 + 오늘의 말 (한 장으로 이어진 그림) -->
+  <section class="sec saywrap fadeTB">
+    <img src="img/s-guide-saying.webp" alt="처음이라면 이렇게 보세요 — 관상부터 · 타로로 · 사주로. 그리고 오늘의 말" loading="lazy">
+    <a class="hot" data-go="gwansang" aria-label="나를 먼저 알고 싶다면 관상부터" style="left:7%;top:19.1%;width:22%;height:11.3%"></a>
+    <a class="hot" data-go="tarot"    aria-label="질문 하나가 급하다면 타로로"   style="left:36.5%;top:19.1%;width:22%;height:11.3%"></a>
+    <a class="hot" data-go="saju"     aria-label="인생 전체의 흐름이 궁금하다면 사주로" style="left:65.5%;top:19.1%;width:22%;height:11.3%"></a>
+    <p class="sayText" id="sayText"></p>
+    <div class="sayWho" id="sayWho"></div>
+  </section>
+
+  <!-- 5. 후기 — reviews.js 가 비어 있으면 통째로 숨습니다 -->
+  <section class="sec fadeT" id="revsec" hidden>
+    <img src="img/s5-title.webp" alt="백귀야행도 후기">
+    <div class="revbody">
+      <div id="revcards"></div>
+      <a class="revwrite" data-go="reviewForm">후기 남기기</a>
+    </div>
+  </section>
+
+  <!-- 6. 자주 묻는 질문 -->
+  <section class="sec fadeTB">
+    <img src="img/s6-faq.webp" alt="자주 묻는 질문" loading="lazy">
+    <button class="hot" data-faq="0" aria-label="결제하면 언제, 어디로 와요?"                     style="left:4%;top:26.5%;width:92%;height:7%"></button>
+    <button class="hot" data-faq="1" aria-label="풀이를 잃어버렸어요"       style="left:4%;top:35.2%;width:92%;height:7%"></button>
+    <button class="hot" data-faq="2" aria-label="내 질문에도 답해 주나요?"                        style="left:4%;top:43.9%;width:92%;height:7%"></button>
+    <button class="hot" data-faq="3" aria-label="태어난 시간을 모르면 어떻게 하나요?"              style="left:4%;top:52.6%;width:92%;height:7%"></button>
+    <button class="hot" data-faq="4" aria-label="세 가지는 뭐가 다른가요?" style="left:4%;top:61.3%;width:92%;height:7%"></button>
+    <button class="hot" data-faq="5" aria-label="안 좋게 나오면 어쩌죠?"                          style="left:4%;top:70%;width:92%;height:7%"></button>
+    <a class="hot" data-go="terms"   aria-label="이용약관"        style="left:21%;top:86.3%;width:12%;height:3.4%"></a>
+    <a class="hot" data-go="privacy" aria-label="개인정보처리방침" style="left:37%;top:86.3%;width:23%;height:3.4%"></a>
+    <a class="hot" data-go="refund"  aria-label="환불정책"        style="left:64%;top:86.3%;width:14%;height:3.4%"></a>
+  </section>
+
+  <footer>
+    <div class="brand">백귀야행도</div>
+    상호 온미라이프 · 대표전화 <a href="tel:18660423">1866-0423</a><br>
+    문의 <a href="mailto:ja9746@naver.com">ja9746@naver.com</a>
+    <!-- 사업자등록번호 / 통신판매업 신고번호 / 대표자명 / 사업장 주소는 신고 후 아래에 채워 넣으세요 -->
+    <div style="margin-top:14px;font-size:12px;color:#6f6253">
+      운세 서비스는 재미로 보는 것이며, 결과에 대한 판단과 선택은 본인에게 있습니다.
+    </div>
+  </footer>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+    <h3 id="mt"></h3><p id="mb"></p>
+    <button type="button" id="mc">닫기</button>
+  </div>
+</div>
+
+<script src="reviews.js"></script>
+<script src="sayings.js"></script>
+<script>
+/* ───── 여기만 고치면 됩니다 ───── */
+const LINKS = {
+  gwansang : '',                                    // 백귀관상  (배포 후 주소 입력)
+  saju     : 'https://baekgwi-saju.vercel.app/',    // 백귀사주
+  tarot    : 'https://baekgwi-tarot.vercel.app/',   // 백귀타로
+  terms    : '',                                    // 이용약관
+  privacy  : '',                                    // 개인정보처리방침
+  refund   : '',                                    // 환불정책
+  reviewForm:''                                     // 후기 남기기 (구글 폼 등 주소)
+};
+/* ──────────────────────────── */
+
+const FAQ = [
+  ['결제하면 언제, 어디로 와요?',
+   '결제가 끝나는 그 자리에서 바로 풀이가 열립니다. 따로 기다리실 것도, 받으러 가실 곳도 없습니다.\n\n풀이는 저장해 두는 방식입니다. 화면 안의 저장 버튼을 누르시면 풀이 전체가 파일로 내려받아지고, 그 파일은 언제든 다시 열어 보실 수 있습니다. 휴대폰에서도, 카카오톡처럼 앱 안에서 열린 화면에서도 저장됩니다.\n\n풀이가 열리면 읽기 전에 저장부터 해두시는 것을 권합니다.'],
+
+  ['풀이를 잃어버렸어요',
+   '풀이는 저장해 가신 파일이 전부입니다. 저희가 손님의 풀이를 따로 보관하지 않기 때문에, 파일을 잃어버리시면 같은 풀이를 다시 꺼내 드릴 방법이 없습니다.\n\n그래서 풀이가 열리면 가장 먼저 저장을 해두셔야 합니다. 내려받은 파일은 다른 곳에 한 벌 더 옮겨 두시면 안심입니다.'],
+
+  ['내 질문에도 답해 주나요?',
+   '백귀타로는 그렇습니다. 품고 오신 질문을 그대로 받아, 그 질문 하나만 끝까지 풀어드립니다. 재회할 수 있을지, 그 사람 속마음이 어떤지, 지금 그만두어야 할지 — 무엇을 물으셔도 됩니다.\n\n백귀사주와 백귀관상은 질문을 받는 방식이 아닙니다. 정해진 항목을 따라 타고난 성향부터 재물·인연·직업·앞으로의 흐름까지 통째로 짚어드립니다.\n\n묻고 싶은 것이 분명하면 타로를, 나를 통째로 알고 싶으시면 사주나 관상을 보시면 됩니다.'],
+
+  ['태어난 시간을 모르면 어떻게 하나요?',
+   '모르셔도 봐드립니다. 시간 칸에서 모른다고 알려주시면 시주를 뺀 세 기둥으로 풀이가 나갑니다.\n\n그대로 나오는 것 — 타고난 성향과 본질, 재물의 흐름, 인연과 궁합, 직업과 적성, 해마다 바뀌는 큰 운의 흐름.\n\n빠지는 것 — 시간에 걸린 자리입니다. 말년의 모습, 자식과의 인연, 하루 단위의 세밀한 시기 같은 것들이 흐려집니다.\n\n시간을 아시면 훨씬 촘촘해지니, 가족께 여쭤보시거나 출생 기록을 한 번 확인해 보셔도 좋습니다. 백귀타로와 백귀관상은 생시가 필요 없습니다.'],
+
+  ['세 가지는 뭐가 다른가요?',
+   '원광법사의 백귀사주 — 생년월일시로 봅니다. 타고난 운명과 평생의 흐름이 무엇인지, 언제 어떤 운이 오고 가는지를 봅니다. 호흡이 가장 긴 점법입니다.\n\n호연의 백귀타로 — 지금 품은 질문 하나를 봅니다. 당장 궁금한 일, 상대의 속마음, 가까운 시기의 선택에 답합니다. 호흡이 가장 짧고 빠릅니다.\n\n원안법사의 백귀관상 — 셀카 한 장으로 봅니다. 얼굴에 드러난 기운과 형상으로 성향과 재물, 인연을 읽습니다. 생년월일을 모르셔도 볼 수 있습니다.\n\n처음이시라면 관상으로 나를 먼저 보시고, 급한 질문은 타로로, 인생 전체의 흐름은 사주로 보시면 됩니다.'],
+
+  ['안 좋게 나오면 어쩌죠?',
+   '겁만 주고 끝내지 않습니다. 무엇 때문에 막혀 있는지, 그 기운이 언제까지 가는지, 그동안 무엇을 하고 무엇을 피해야 하는지까지 같이 짚어드립니다.\n\n나쁜 기운이 보이면 왜 그것이 붙었는지와 푸는 방법을 함께 드립니다. 보기만 하고 돌려보내지는 않습니다.\n\n운은 정해진 선고가 아니라 흐름입니다. 나쁜 시기를 미리 알면 그 시기에 큰일을 벌이지 않는 것만으로도 달라집니다.']
+];
+
+const mask=document.getElementById('mask'),mt=document.getElementById('mt'),mb=document.getElementById('mb');
+let lastFocus=null;
+function open(t,b){lastFocus=document.activeElement;mt.textContent=t;mb.textContent=b;
+  mask.classList.add('on');document.body.style.overflow='hidden';
+  mask.querySelector('.modal').scrollTop=0;document.getElementById('mc').focus()}
+function close(){mask.classList.remove('on');document.body.style.overflow='';
+  if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+document.getElementById('mc').onclick=close;
+mask.onclick=e=>{if(e.target===mask)close()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+
+document.querySelectorAll('[data-faq]').forEach(el=>{
+  el.onclick=()=>{const f=FAQ[+el.dataset.faq];open(f[0],f[1])};
+});
+document.querySelectorAll('[data-go]').forEach(el=>{
+  const url=LINKS[el.dataset.go];
+  if(url){el.setAttribute('href',url)}
+  else{el.setAttribute('role','button');el.setAttribute('tabindex','0');
+       el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click()}})}
+  el.onclick=e=>{if(!url){e.preventDefault();open('준비 중입니다','조금만 기다려 주시면 곧 열어드리겠습니다.')}};
+});
+/* 오늘의 말 — 돌아가며 한마디 */
+(function(){
+  const list=(window.SAYINGS||[]); if(!list.length) return;
+  const t=document.getElementById('sayText'), w=document.getElementById('sayWho');
+  let i=Math.floor(Math.random()*list.length);
+  const draw=()=>{t.textContent=list[i].text; w.textContent=list[i].who};
+  draw();
+  if(list.length<2) return;
+  const soft=!matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const next=()=>{i=(i+1)%list.length; draw()};
+  setInterval(()=>{
+    if(!soft){next(); return}
+    t.classList.add('fade'); w.classList.add('fade');
+    setTimeout(()=>{next(); t.classList.remove('fade'); w.classList.remove('fade')},500);
+  },5000);
+})();
+
+/* 후기 — 실제 후기가 있을 때만 나오고, 세 개씩 돌아감 */
+(function(){
+  const all=(window.REVIEWS||[]).filter(r=>r&&r.text); if(!all.length) return;
+  const sec=document.getElementById('revsec'), box=document.getElementById('revcards');
+  sec.hidden=false;
+  const per=Math.min(3,all.length); let at=0;
+  const card=r=>{
+    const n=Math.max(1,Math.min(5,+r.star||5));
+    const d=document.createElement('div'); d.className='rev';
+    const s=document.createElement('div'); s.className='stars';
+    s.textContent='★'.repeat(n)+'☆'.repeat(5-n);
+    const p=document.createElement('p'); p.textContent=r.text;
+    d.append(s,p);
+    if(r.from){const f=document.createElement('div'); f.className='from'; f.textContent=r.from; d.append(f)}
+    return d;
+  };
+  const draw=()=>{
+    box.textContent='';
+    const frag=document.createDocumentFragment();
+    for(let k=0;k<per;k++) frag.append(card(all[(at+k)%all.length]));
+    box.append(frag);
+    box.style.display='flex'; box.style.flexDirection='column'; box.style.gap='16px';
+  };
+  draw();
+  if(all.length<=per) return;
+  const soft=!matchMedia('(prefers-reduced-motion:reduce)').matches;
+  setInterval(()=>{
+    if(!soft){at=(at+per)%all.length; draw(); return}
+    [...box.children].forEach(c=>c.style.opacity=0);
+    setTimeout(()=>{at=(at+per)%all.length; draw()},500);
+  },8000);
+})();
+</script>
+</body>
+</html>
