@@ -187,7 +187,7 @@
 
   <footer>
     <div class="brand">백귀야행도</div>
-    상호 온미라이프 · 대표전화 <a href="tel:18660423">1866-0423</a><br>
+    상호 <span id="omni" style="-webkit-tap-highlight-color:transparent;cursor:default">온미라이프</span> · 대표전화 <a href="tel:18660423">1866-0423</a><br>
     문의 <a href="mailto:ja9746@naver.com">ja9746@naver.com</a>
     <!-- 사업자등록번호 / 통신판매업 신고번호 / 대표자명 / 사업장 주소는 신고 후 아래에 채워 넣으세요 -->
     <div style="margin-top:14px;font-size:12px;color:#6f6253">
@@ -307,6 +307,17 @@ document.querySelectorAll('[data-go]').forEach(el=>{
     [...box.children].forEach(c=>c.style.opacity=0);
     setTimeout(()=>{at=(at+per)%all.length; draw()},500);
   },8000);
+})();
+/* 숨은 문 — 푸터의 '온미라이프'를 3초 안에 다섯 번 치면 관리 화면으로 */
+(function(){
+  const el=document.getElementById('omni'); if(!el) return;
+  let n=0,t=0;
+  el.addEventListener('click',()=>{
+    const now=Date.now();
+    if(now-t>3000) n=0;
+    t=now; n++;
+    if(n>=5){ n=0; location.href='/admin.html'; }
+  });
 })();
 </script>
 </body>

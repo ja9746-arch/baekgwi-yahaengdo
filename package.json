@@ -1,0 +1,10 @@
+{
+  "name": "baekgwi-yahaengdo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "백귀야행도 대문 — 백귀관상·백귀사주·백귀타로를 묶는 첫 화면",
+  "dependencies": {
+    "@vercel/blob": "1.1.1"
+  }
+}

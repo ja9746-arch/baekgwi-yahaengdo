@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>백귀야행도 · 관리</title>
+<link rel="icon" href="img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Song+Myung&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#120a09;color:#e8dcc4;font-family:'Gowun Batang',serif;
+            -webkit-text-size-adjust:100%;word-break:keep-all}
+  .wrap{max-width:860px;margin:0 auto;
+        padding-left:max(18px,env(safe-area-inset-left,0px));
+        padding-right:max(18px,env(safe-area-inset-right,0px));padding-block:34px 60px}
+  h1{font-family:'Song Myung',serif;font-size:21px;color:#e8c87a;margin:0 0 4px;letter-spacing:.06em}
+  .sub{font-size:13px;color:#8d7c63;margin:0 0 26px}
+  .card{background:#1b100d;border:1px solid rgba(200,150,70,.3);border-radius:14px;
+        padding:20px 18px;margin-bottom:18px}
+  h2{font-family:'Song Myung',serif;font-size:16px;color:#dcb972;margin:0 0 14px}
+  label{display:block;font-size:13px;color:#a2917a;margin:0 0 6px}
+  input,select{width:100%;padding:12px 13px;margin-bottom:13px;border-radius:9px;
+        border:1px solid rgba(200,150,70,.35);background:#0d0605;color:#f0e6d2;
+        font-family:inherit;font-size:16px}
+  input:focus,select:focus{outline:2px solid #ffd77a;outline-offset:1px}
+  button{padding:12px 18px;border-radius:9px;border:1px solid rgba(214,166,80,.6);
+        background:rgba(214,166,80,.1);color:#f0cf86;font-family:inherit;font-size:15px;cursor:pointer}
+  button:hover{background:rgba(214,166,80,.22)}
+  button.quiet{border-color:rgba(160,140,110,.4);color:#b6a88a}
+  .msg{font-size:13.5px;margin-top:10px;min-height:1.2em;line-height:1.7}
+  .msg.bad{color:#f09a8a}
+  .msg.good{color:#9fd49a}
+  .keybox{margin-top:12px;padding:13px;border:1px dashed rgba(214,166,80,.45);border-radius:9px;
+        background:#0d0605;font-size:13px;line-height:1.75;word-break:break-all;display:none}
+  .keybox b{color:#e8c87a;display:block;margin-bottom:6px;font-weight:400}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{padding:11px 8px;text-align:left;border-bottom:1px solid rgba(200,150,70,.16);vertical-align:top}
+  th{color:#a2917a;font-weight:400;font-size:12.5px}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;white-space:nowrap}
+  .t-open{background:rgba(220,120,60,.18);color:#f0a87a;border:1px solid rgba(220,120,60,.4)}
+  .t-new{background:rgba(120,190,120,.15);color:#9fd49a;border:1px solid rgba(120,190,120,.38)}
+  .t-err{background:rgba(220,70,70,.18);color:#f0908a;border:1px solid rgba(220,70,70,.42)}
+  .empty{color:#8d7c63;font-size:13.5px;line-height:1.9}
+  .note{font-size:12.5px;color:#7d6e58;line-height:1.85;margin-top:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row>*{margin-bottom:0}
+  .row select{width:auto;min-width:120px}
+  a{color:#d9b45f}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>백귀야행도 · 관리</h1>
+  <p class="sub">결제와 환불은 포트원에서 하십니다. 여기는 포트원이 모르는 것만 봅니다.</p>
+
+  <!-- 로그인 -->
+  <section class="card" id="loginCard">
+    <h2>관리자 로그인</h2>
+    <label for="aid">아이디</label>
+    <input id="aid" type="text" autocomplete="username" autocapitalize="off" spellcheck="false">
+    <label for="apw">비밀번호</label>
+    <input id="apw" type="password" autocomplete="current-password">
+    <button id="loginBtn" type="button">들어가기</button>
+    <div class="msg" id="loginMsg"></div>
+  </section>
+
+  <!-- 로그인 후 -->
+  <div id="panel" hidden>
+
+    <section class="card">
+      <h2>무료 열쇠</h2>
+      <p class="note" style="margin-top:0">
+        열쇠를 켜면 결제 없이 세 서비스가 전부 열립니다. 주소 끝에 열쇠를 붙여 한 번 들어가면
+        그 기기에 기억됩니다. 남에게 보내지 마십시오 — 받은 사람도 공짜로 봅니다.
+      </p>
+      <div class="row" style="margin-top:14px">
+        <select id="days" aria-label="열쇠 유효기간">
+          <option value="1">하루</option>
+          <option value="7" selected>이레</option>
+          <option value="30">한 달</option>
+          <option value="90">석 달</option>
+        </select>
+        <button id="keyBtn" type="button">열쇠 만들기</button>
+      </div>
+      <div class="keybox" id="keyBox"></div>
+    </section>
+
+    <section class="card">
+      <h2>결제 기록</h2>
+      <div class="row" style="margin-bottom:14px">
+        <button id="reloadBtn" type="button" class="quiet">새로 보기</button>
+        <span class="note" style="margin:0" id="count"></span>
+      </div>
+      <div id="rows"></div>
+      <p class="note">
+        <b style="color:#a2917a;font-weight:400">환불 판단</b><br>
+        열람 안 함 → 환불해 주셔도 됩니다.<br>
+        열람함 → 방침대로 환불이 제한됩니다.<br>
+        오류 → 손님 잘못이 아니니 환불해 주십시오.<br>
+        환불 버튼은 <b style="color:#a2917a;font-weight:400">포트원</b>에서 누르십니다. 여기엔 일부러 두지 않았습니다.
+      </p>
+    </section>
+
+    <section class="card">
+      <button id="outBtn" type="button" class="quiet">나가기</button>
+    </section>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const api = async (path, body) => {
+  const r = await fetch(path, body
+    ? { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body) }
+    : { method:'GET' });
+  let j = {}; try { j = await r.json(); } catch {}
+  return { ok:r.ok, ...j };
+};
+
+function show(on){ $('#loginCard').hidden = on; $('#panel').hidden = !on; }
+
+$('#loginBtn').onclick = async () => {
+  const m = $('#loginMsg'); m.className='msg'; m.textContent='확인하는 중…';
+  const r = await api('/api/admin', { do:'login', id:$('#aid').value, pw:$('#apw').value });
+  if (r.ok) { m.textContent=''; $('#apw').value=''; show(true); load(); }
+  else { m.className='msg bad'; m.textContent = r.error || '들어가지 못했습니다'; }
+};
+$('#apw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); });
+
+$('#outBtn').onclick = async () => { await api('/api/admin', { do:'logout' }); location.href='/'; };
+
+$('#keyBtn').onclick = async () => {
+  const days = $('#days').value;
+  const r = await api('/api/admin', { do:'freekey', days:Number(days) });
+  const box = $('#keyBox');
+  if (!r.ok) { box.style.display='block'; box.textContent = r.error || '만들지 못했습니다'; return; }
+  const q = '?bgkey=' + encodeURIComponent(r.key);
+  box.style.display = 'block';
+  box.innerHTML = '';
+  const b = document.createElement('b');
+  b.textContent = r.days + '일짜리 열쇠입니다. 아래 주소로 한 번씩 들어가시면 켜집니다.';
+  box.append(b);
+  [['백귀사주','https://daeguksa-git-fix-review-sweep-ja9746-6747.vercel.app/'],
+   ['백귀타로','https://baekgwi-tarot.vercel.app/'],
+   ['백귀관상','https://baekgwi-gwansang.vercel.app/']].forEach(([n,u]) => {
+    const p = document.createElement('p'); p.style.margin='8px 0 0';
+    const a = document.createElement('a'); a.href = u + q; a.target='_blank'; a.rel='noopener';
+    a.textContent = n + ' 열기';
+    p.append(a); box.append(p);
+  });
+};
+
+function fmt(ms){
+  if (!ms) return '—';
+  const d = new Date(ms);
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+async function load(){
+  const r = await api('/api/admin?do=list');
+  const box = $('#rows'); box.textContent='';
+  if (!r.ok) { $('#count').textContent=''; box.innerHTML = '<p class="empty">'+(r.error||'불러오지 못했습니다')+'</p>'; return; }
+  const rows = r.rows || [];
+  $('#count').textContent = rows.length ? rows.length + '건' : '';
+  if (!rows.length) {
+    box.innerHTML = '<p class="empty">아직 기록이 없습니다.<br>포트원을 붙이고 손님이 결제하면 여기에 쌓입니다.</p>';
+    return;
+  }
+  const t = document.createElement('table');
+  t.innerHTML = '<thead><tr><th>결제번호</th><th>서비스</th><th>금액</th><th>결제시각</th><th>상태</th></tr></thead>';
+  const tb = document.createElement('tbody');
+  rows.forEach(x => {
+    const tr = document.createElement('tr');
+    const td = (txt, cls) => { const d=document.createElement('td'); if(cls)d.className=cls; d.textContent=txt; return d; };
+    tr.append(td(x.id,'num'), td(x.service||'—'));
+    tr.append(td(x.amount ? x.amount.toLocaleString('ko-KR')+'원' : '—','num'));
+    tr.append(td(fmt(x.paidAt||x.at),'num'));
+    const s = document.createElement('td'); const g = document.createElement('span');
+    if (x.error)        { g.className='tag t-err';  g.textContent='오류'; }
+    else if (x.openedAt){ g.className='tag t-open'; g.textContent='열람함 '+fmt(x.openedAt); }
+    else                { g.className='tag t-new';  g.textContent='열람 안 함'; }
+    s.append(g);
+    if (x.error) { const n=document.createElement('div'); n.style.cssText='font-size:12px;color:#8d7c63;margin-top:5px'; n.textContent=x.error; s.append(n); }
+    tr.append(s); tb.append(tr);
+  });
+  t.append(tb); box.append(t);
+}
+$('#reloadBtn').onclick = load;
+
+/* 이미 로그인돼 있으면 바로 열어준다 */
+api('/api/admin?do=me').then(r => { if (r.ok) { show(true); load(); } });
+</script>
+</body>
+</html>
