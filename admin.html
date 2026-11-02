@@ -362,7 +362,8 @@ function filtered(){
 async function load(){
   const r = await api('/api/admin?do=list');
   if (!r.ok) { $('#count').textContent=''; $('#sum').textContent='';
-    $('#rows').innerHTML = '<p class="empty">'+(r.error||'불러오지 못했습니다')+'</p>'; return; }
+    const e=document.createElement('p'); e.className='empty'; e.textContent = r.error || '불러오지 못했습니다';
+    $('#rows').textContent=''; $('#rows').append(e); return; }
   ALL = r.rows || [];
   fillMonths();
   draw();
@@ -588,8 +589,11 @@ async function loadKakao(){
     add('끊기', async () => { await api('/api/admin', { do:'kakaooff' }); loadKakao(); }, true);
   } else if (r.끊김) {
     n.innerHTML = '<b style="color:#f09a8a;font-weight:400">연결이 끊겼습니다.</b> '
-      + '두 달 넘게 알림이 없으면 카카오가 끊습니다. 아래를 눌러 다시 이으십시오.'
-      + (r.사유 ? '<br><span style="color:#7d6e58">' + r.사유 + '</span>' : '');
+      + '두 달 넘게 알림이 없으면 카카오가 끊습니다. 아래를 눌러 다시 이으십시오.';
+    /* 사유는 카카오가 보내 준 남의 글이다. 글자 그대로만 붙인다 */
+    if (r.사유) { n.append(document.createElement('br'));
+      const sp=document.createElement('span'); sp.style.color='#7d6e58';
+      sp.textContent=String(r.사유).slice(0,120); n.append(sp); }
     add('다시 연결', () => { location.href='/api/kakao?go=1'; });
   } else {
     n.innerHTML = '아직 연결하지 않으셨습니다. 한 번 누르면 카카오로 갔다가 돌아옵니다.<br>'

@@ -81,7 +81,7 @@ export default async function handler(req, res) {
     /* 손님을 기다리게 하지 않고 뒤에서 알립니다 */
     kakaoSend(
       `[백귀야행도] 문의 1건\n${name} · ${phone}${birth ? " · " + birth : ""}`
-      + (email ? `\n${email}` : "")
+      + (email ? `\n${email.slice(0, 40)}` : "")
       + `\n${body.replace(/\s+/g, " ").slice(0, 70)}`,
       "https://baekgwi-yahaengdo.vercel.app/admin.html",
     ).catch(() => {});

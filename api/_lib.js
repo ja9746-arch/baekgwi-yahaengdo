@@ -109,13 +109,28 @@ async function blobDel(path) {
   try { await del(path); } catch (e) { console.error("blobDel", path, e?.message); }
 }
 
-async function blobAll(prefix, limit) {
+/* 한 번에 1000개까지만 돌려주므로, 더 있으면 쪽지(cursor)를 들고 이어서 받습니다.
+ * 이어받지 않으면 백업과 엑셀이 1000건에서 말없이 잘립니다 — 5년 보관 자료가 그러면 안 됩니다. */
+async function blobAll(prefix, limit = 1000) {
   const { list } = await import("@vercel/blob");
+  const want = Math.max(1, Number(limit) || 1000);
+  const names = [];
   try {
-    const { blobs } = await list({ prefix, limit });
-    const out = await Promise.all(blobs.map(b => blobGet(b.pathname)));
-    return out.filter(Boolean);
-  } catch (e) { console.error("blobAll", prefix, e?.message); return []; }
+    let cursor;
+    do {
+      const r = await list({ prefix, limit: Math.min(1000, want - names.length), cursor });
+      for (const b of r.blobs) names.push(b.pathname);
+      cursor = r.hasMore ? r.cursor : null;
+    } while (cursor && names.length < want);
+  } catch (e) { console.error("blobAll list", prefix, e?.message); return []; }
+
+  /* 한꺼번에 다 열면 한 번의 실행이 버티지 못합니다. 20개씩 끊어 엽니다 */
+  const out = [];
+  for (let i = 0; i < names.length; i += 20) {
+    const part = await Promise.all(names.slice(i, i + 20).map(blobGet));
+    for (const v of part) if (v) out.push(v);
+  }
+  return out;
 }
 
 /* 결제 기록 — 결제 한 건이 파일 하나. 동시에 써도 서로 덮지 않습니다 */

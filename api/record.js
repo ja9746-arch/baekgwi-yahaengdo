@@ -37,9 +37,10 @@ export default async function handler(req, res) {
   if (!/^[A-Za-z0-9_-]{6,80}$/.test(id) || !EVENTS.includes(event) || !SERVICES.includes(service)) {
     res.status(400).json({ error: "값이 올바르지 않습니다" }); return;
   }
-  const want = recordSig(id, event);
-  const got = String(b.sig || "");
-  if (got.length !== want.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(want))) {
+  /* 글자 수가 아니라 바이트 수로 견줍니다. 한글이 섞여 오면 길이가 달라져 터집니다 */
+  const want = Buffer.from(recordSig(id, event));
+  const got = Buffer.from(String(b.sig || ""));
+  if (got.length !== want.length || !crypto.timingSafeEqual(got, want)) {
     res.status(401).json({ error: "서명이 맞지 않습니다" }); return;
   }
 
