@@ -6,7 +6,7 @@
  * 돌아올 때는 다른 사이트에서 넘어오는 길이라 관리자 쿠키가 따라오지 않습니다.
  * 그래서 보낼 때 서명한 쪽지(state)를 들려 보내고, 돌아오면 그 서명을 봅니다.
  */
-import { KAKAO_REDIRECT, isAdmin, putKakao, sign, verify, SECRET } from "./_lib.js";
+import { KAKAO_REDIRECT, isAdmin, kakaoBody, putKakao, sign, verify, SECRET } from "./_lib.js";
 
 const page = (title, body) => `<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     const r = await fetch("https://kauth.kakao.com/oauth/token", {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded;charset=utf-8" },
-      body: new URLSearchParams({ grant_type: "authorization_code", client_id: key, redirect_uri: KAKAO_REDIRECT, code }),
+      body: new URLSearchParams(kakaoBody({ grant_type: "authorization_code", client_id: key, redirect_uri: KAKAO_REDIRECT, code })),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.refresh_token) {

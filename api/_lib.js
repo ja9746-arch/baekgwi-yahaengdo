@@ -191,10 +191,17 @@ export async function listStats(days = 30) {
  * 건당 요금이 없고 심사도 없는 기능입니다.
  *
  * 쓰는 열쇠
- *   KAKAO_REST_KEY   카카오 REST API 키 (버셀 설정에만 둡니다)
+ *   KAKAO_REST_KEY        카카오 REST API 키 (버셀 설정에만 둡니다)
+ *   KAKAO_CLIENT_SECRET   클라이언트 시크릿. 앱에서 켜 두었으면 반드시 있어야 합니다
  *   cfg/kakao.json   한 번 연결하면 받는 refresh token. 비공개 저장소에 둡니다.
  * ────────────────────────────────────────── */
 export const KAKAO_REDIRECT = "https://baekgwi-yahaengdo.vercel.app/api/kakao";
+
+/* 앱에 클라이언트 시크릿이 켜져 있으면 함께 보내야 합니다 */
+export function kakaoBody(o) {
+  const sec = process.env.KAKAO_CLIENT_SECRET || "";
+  return sec ? { ...o, client_secret: sec } : o;
+}
 
 export const getKakao = () => blobGet("cfg/kakao.json");
 export const putKakao = v => blobPut("cfg/kakao.json", v);
@@ -208,7 +215,7 @@ async function kakaoAccess() {
   const r = await fetch("https://kauth.kakao.com/oauth/token", {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded;charset=utf-8" },
-    body: new URLSearchParams({ grant_type: "refresh_token", client_id: key, refresh_token: cur.refresh }),
+    body: new URLSearchParams(kakaoBody({ grant_type: "refresh_token", client_id: key, refresh_token: cur.refresh })),
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || !j.access_token) {
