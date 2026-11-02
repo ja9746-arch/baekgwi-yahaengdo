@@ -9,7 +9,7 @@
 import {
   ADMIN_COOKIE, isAdmin, KEEP_DAYS, KEEP_DAYS_INQ, keepUntil, keepUntilInq,
   listRecords, listInquiries, getInquiry, putInquiry,
-  getConfig, putConfig, getRecord, putRecord,
+  getConfig, putConfig, getRecord, putRecord, listStats,
   same, setCookie, sign, SECRET,
 } from "./_lib.js";
 
@@ -91,6 +91,13 @@ export default async function handler(req, res) {
       await putRecord(cur);
       res.status(200).json({ ok: true });
     } catch (e) { console.error("refund fail", e?.message); res.status(500).json({ error: "저장하지 못했습니다" }); }
+    return;
+  }
+
+  /* ── 방문 통계 ──────────────────────── */
+  if (act === "stat") {
+    try { res.status(200).json({ ok: true, rows: await listStats(30) }); }
+    catch (e) { console.error("stat fail", e?.message); res.status(200).json({ ok: true, rows: [] }); }
     return;
   }
 

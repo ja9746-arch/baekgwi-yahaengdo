@@ -86,6 +86,13 @@
   .qcard .row{gap:8px}
   .qcard button{padding:8px 14px;font-size:13.5px}
   .mini{padding:6px 11px!important;font-size:12.5px!important}
+  .bars{display:flex;flex-direction:column;gap:7px;margin:14px 0 4px}
+  .bar{display:grid;grid-template-columns:62px minmax(0,1fr) 46px;gap:9px;align-items:center;font-size:12.5px}
+  .bar i{font-style:normal;color:#8d7c63;font-variant-numeric:tabular-nums}
+  .bar u{text-decoration:none;display:block;height:9px;border-radius:5px;
+         background:linear-gradient(90deg,#8a5f22,#d9a94e);min-width:2px}
+  .bar b{text-align:right;color:#cfae6c;font-weight:400;font-variant-numeric:tabular-nums}
+  .bar.zero u{background:rgba(200,150,70,.18)}
   a{color:#d9b45f}
   [hidden]{display:none!important}
 </style>
@@ -178,7 +185,7 @@
       <div id="cfgBox" hidden style="margin-top:14px;padding:15px;border:1px dashed rgba(214,166,80,.4);border-radius:10px">
         <label for="cFee">카드 수수료율 (%) — 부가세 별도</label>
         <input id="cFee" type="number" step="0.01" min="0" max="20" inputmode="decimal">
-        <label for="cVat">매출 부가가치세율 (%) — 간이과세자면 0</label>
+        <label for="cVat">매출 부가가치세율 (%)</label>
         <input id="cVat" type="number" step="1" min="0" max="20" inputmode="numeric">
         <label for="cYear">연관리비 (원)</label>
         <input id="cYear" type="number" step="1000" min="0" inputmode="numeric">
@@ -186,13 +193,31 @@
         <span class="note" style="margin-left:10px" id="cfgMsg"></span>
         <p class="note">
           신규 가맹점은 일반 요율 3.4%로 시작하지만, 영세·중소 우대 등급이 반기마다
-          자동 반영되고 차액은 환급됩니다. 등급이 바뀌면 이 값을 고치십시오.
+          자동 반영되고 차액은 환급됩니다. 등급이 바뀌면 이 값을 고치십시오.<br><br>
+          부가가치세율은 <b style="color:#a2917a;font-weight:400">0</b>으로 두었습니다.
+          온미라이프는 간이과세자이고, 간이과세자는 일반 10%가 아니라 업종별 부가율을
+          따로 적용받습니다. 매출이 커져 일반과세자로 바뀌면 10으로 고치십시오.
+          정확한 세액은 세무서나 세무대리인에게 확인하셔야 합니다.
         </p>
       </div>
 
       <div id="byService" style="margin-top:16px"></div>
       <div class="money" id="moneyBox"></div>
       <p class="note" id="moneyNote"></p>
+    </section>
+
+    <section class="card">
+      <h2>방문</h2>
+      <p class="note" style="margin-top:0">
+        누가 왔는지는 보지 않고 숫자만 셉니다. 아이피도 쿠키도 남기지 않습니다.<br>
+        한 사람이 새로고침을 여러 번 해도 한 번으로 셉니다.
+      </p>
+      <div class="row" style="margin:14px 0 0">
+        <button id="stReload" type="button" class="quiet">새로 보기</button>
+        <span class="note" style="margin:0" id="stSum"></span>
+      </div>
+      <div id="stBars" class="bars"></div>
+      <div id="stClick"></div>
     </section>
 
     <section class="card">
@@ -388,7 +413,7 @@ function draw(){
 }
 
 /* ── 매출 ─────────────────────────────── */
-let CFG = { feeRate:3.4, feeVat:true, yearlyFee:110000, vatRate:10 };
+let CFG = { feeRate:3.4, feeVat:true, yearlyFee:110000, vatRate:0 };
 const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
 const monKey = ms => { const d=new Date(ms); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); };
 const monLabel = k => { const [y,m]=k.split('-'); return y+'년 '+Number(m)+'월'; };
@@ -470,6 +495,52 @@ $('#cfgSave').onclick = async () => {
   else m.textContent = r.error || '저장하지 못했습니다';
 };
 
+/* ── 방문 ─────────────────────────────── */
+const WHAT_NAME = { gwansang:'백귀관상', saju:'백귀사주', tarot:'백귀타로',
+  terms:'이용약관', privacy:'개인정보', refund:'환불정책',
+  reviewForm:'후기 남기기', inquiry:'문의 보냄', faq:'자주 묻는 질문' };
+
+async function loadStat(){
+  const r = await api('/api/admin?do=stat');
+  const rows = (r.rows||[]).slice(0,14).reverse();
+  const bars = $('#stBars'), cl = $('#stClick');
+  bars.textContent=''; cl.textContent='';
+  if (!rows.length) {
+    $('#stSum').textContent='';
+    bars.innerHTML = '<p class="empty">아직 방문 기록이 없습니다.<br>손님이 들어오면 날마다 쌓입니다.</p>';
+    return;
+  }
+  const total = rows.reduce((a,x)=>a+(x.view||0),0);
+  const today = rows[rows.length-1];
+  $('#stSum').textContent = '최근 ' + rows.length + '일 ' + total + '명 · 오늘 ' + (today.view||0) + '명';
+  const max = Math.max(1, ...rows.map(x=>x.view||0));
+  rows.forEach(x=>{
+    const d = document.createElement('div'); d.className='bar' + ((x.view||0)?'':' zero');
+    const i = document.createElement('i'); i.textContent = String(x.day||'').slice(5).replace('-','.');
+    const u = document.createElement('u'); u.style.width = Math.max(2, Math.round((x.view||0)/max*100)) + '%';
+    const b = document.createElement('b'); b.textContent = (x.view||0);
+    d.append(i,u,b); bars.append(d);
+  });
+  /* 어느 버튼이 눌렸나 */
+  const sum = {};
+  rows.forEach(x => Object.entries(x.click||{}).forEach(([k,v]) => { sum[k]=(sum[k]||0)+v; }));
+  const keys = Object.keys(sum).sort((a,b)=>sum[b]-sum[a]);
+  if (!keys.length) { cl.innerHTML = '<p class="note">아직 눌린 버튼이 없습니다.</p>'; return; }
+  const t = document.createElement('table');
+  t.innerHTML = '<thead><tr><th>무엇을 눌렀나</th><th>횟수</th><th>방문 대비</th></tr></thead>';
+  const tb = document.createElement('tbody');
+  keys.forEach(k=>{
+    const tr=document.createElement('tr');
+    const td=(v,c)=>{const d=document.createElement('td');if(c)d.className=c;d.textContent=v;return d};
+    tr.append(td(WHAT_NAME[k]||k), td(sum[k]+'회','num'),
+      td(total ? Math.round(sum[k]/total*100)+'%' : '—','num'));
+    tb.append(tr);
+  });
+  const sc=document.createElement('div'); sc.className='scroll';
+  t.append(tb); sc.append(t); cl.append(sc);
+}
+$('#stReload').onclick = loadStat;
+
 /* ── 문의함 ───────────────────────────── */
 let QS = [];
 async function loadQ(){
@@ -541,6 +612,7 @@ async function boot(){
   if (c.ok && c.cfg) CFG = c.cfg;
   await load();
   await loadQ();
+  await loadStat();
 }
 api('/api/admin?do=me').then(r => { if (r.ok) { show(true); boot(); } });
 </script>

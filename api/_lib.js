@@ -147,7 +147,7 @@ const CFG_DEFAULT = {
   feeRate: 3.4,        // 카드 수수료율 (%) — 부가세 별도
   feeVat: true,        // 수수료에 부가세 10%가 붙는가
   yearlyFee: 110000,   // 연관리비 (원)
-  vatRate: 10,         // 매출 부가가치세율 (%) — 간이과세자면 0 으로 두십시오
+  vatRate: 0,          // 매출 부가가치세율 (%) — 온미라이프는 간이과세자라 0 으로 둡니다
 };
 
 export async function getConfig() {
@@ -162,4 +162,26 @@ export async function putConfig(patch) {
   next.feeVat = !!next.feeVat;
   await blobPut("cfg/main.json", next);
   return next;
+}
+
+/* ── 방문 통계 ─────────────────────────────
+ * 하루치를 한 파일에 모읍니다. 사람을 알아보지 않고 숫자만 셉니다.
+ * 아이피도 쿠키도 남기지 않으므로 개인정보가 아닙니다.
+ * ────────────────────────────────────────── */
+export const statKey = (d = new Date()) => {
+  const k = new Date(d.getTime() + 9 * 3600000);  // 한국 날짜 기준
+  return `${k.getUTCFullYear()}-${String(k.getUTCMonth() + 1).padStart(2, "0")}-${String(k.getUTCDate()).padStart(2, "0")}`;
+};
+
+export async function bumpStat(kind, what) {
+  const day = statKey();
+  const cur = (await blobGet(`stat/${day}.json`)) || { day, view: 0, click: {} };
+  if (kind === "view") cur.view = (cur.view || 0) + 1;
+  else { cur.click = cur.click || {}; cur.click[what] = (cur.click[what] || 0) + 1; }
+  await blobPut(`stat/${day}.json`, cur);
+}
+
+export async function listStats(days = 30) {
+  const rows = await blobAll("stat/", days + 10);
+  return rows.sort((a, b) => String(b.day).localeCompare(String(a.day))).slice(0, days);
 }

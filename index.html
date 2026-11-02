@@ -256,10 +256,18 @@
 
   <footer>
     <div class="brand">백귀야행도</div>
-    상호 <span id="omni" style="-webkit-tap-highlight-color:transparent;cursor:default">온미라이프</span> · 대표전화 <a href="tel:18660423">1866-0423</a><br>
-    문의 <a href="mailto:ja9746@naver.com">ja9746@naver.com</a>
-    <!-- 사업자등록번호 / 통신판매업 신고번호 / 대표자명 / 사업장 주소는 신고 후 아래에 채워 넣으세요 -->
+    상호 <span id="omni" style="-webkit-tap-highlight-color:transparent;cursor:default">온미라이프</span> · 대표 김민철<br>
+    사업자등록번호 501-04-95672<br>
+    <!-- 통신판매업 신고가 끝나면 아래 줄의 괄호를 신고번호로 바꾸십시오 -->
+    통신판매업 신고번호 (신고 예정)<br>
+    울산광역시 북구 염포로 685, 110동 1801호<br>
+    대표전화 <a href="tel:18660423">1866-0423</a> · 문의 <a href="mailto:ja9746@naver.com">ja9746@naver.com</a>
     <div style="margin-top:14px;font-size:12px;color:#6f6253">
+      <a href="/policy.html#terms">이용약관</a> ·
+      <a href="/policy.html#privacy">개인정보처리방침</a> ·
+      <a href="/policy.html#refund">환불정책</a>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:#6f6253">
       운세 서비스는 재미로 보는 것이며, 결과에 대한 판단과 선택은 본인에게 있습니다.
     </div>
   </footer>
@@ -407,6 +415,30 @@ document.querySelectorAll('[data-go]').forEach(el=>{
     }
     btn.disabled=false;
   });
+})();
+
+/* 방문·클릭 세기 — 누가 왔는지는 보지 않고 숫자만 올립니다 */
+(function(){
+  const send = (t,w) => {
+    try{
+      const body = JSON.stringify(w ? {t,w} : {t});
+      if (navigator.sendBeacon) navigator.sendBeacon('/api/hit', new Blob([body],{type:'application/json'}));
+      else fetch('/api/hit',{method:'POST',headers:{'content-type':'application/json'},body,keepalive:true}).catch(()=>{});
+    }catch{}
+  };
+  /* 방문은 한 번만 — 같은 창에서 새로고침해도 또 세지 않습니다 */
+  try{
+    if(!sessionStorage.getItem('bg_seen')){ sessionStorage.setItem('bg_seen','1'); send('view'); }
+  }catch{ send('view'); }
+
+  document.querySelectorAll('[data-go]').forEach(el=>{
+    el.addEventListener('click',()=>send('click', el.dataset.go));
+  });
+  document.querySelectorAll('[data-faq]').forEach(el=>{
+    el.addEventListener('click',()=>send('click','faq'));
+  });
+  const f=document.getElementById('inqForm');
+  if(f) f.addEventListener('submit',()=>send('click','inquiry'));
 })();
 
 /* 숨은 문 — 푸터의 '온미라이프'를 3초 안에 다섯 번 치면 관리 화면으로 */
