@@ -185,3 +185,61 @@ export async function listStats(days = 30) {
   const rows = await blobAll("stat/", days + 10);
   return rows.sort((a, b) => String(b.day).localeCompare(String(a.day))).slice(0, days);
 }
+
+/* ── 카카오 '나에게 보내기' ───────────────
+ * 사장님 본인 카톡으로만 갑니다. 손님에게 가지 않습니다.
+ * 건당 요금이 없고 심사도 없는 기능입니다.
+ *
+ * 쓰는 열쇠
+ *   KAKAO_REST_KEY   카카오 REST API 키 (버셀 설정에만 둡니다)
+ *   cfg/kakao.json   한 번 연결하면 받는 refresh token. 비공개 저장소에 둡니다.
+ * ────────────────────────────────────────── */
+export const KAKAO_REDIRECT = "https://baekgwi-yahaengdo.vercel.app/api/kakao";
+
+export const getKakao = () => blobGet("cfg/kakao.json");
+export const putKakao = v => blobPut("cfg/kakao.json", v);
+
+/* refresh token 으로 그때그때 access token 을 받아 옵니다 */
+async function kakaoAccess() {
+  const key = process.env.KAKAO_REST_KEY || "";
+  const cur = await getKakao();
+  if (!key || !cur || !cur.refresh) return null;
+
+  const r = await fetch("https://kauth.kakao.com/oauth/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded;charset=utf-8" },
+    body: new URLSearchParams({ grant_type: "refresh_token", client_id: key, refresh_token: cur.refresh }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.access_token) {
+    console.error("kakao refresh fail", r.status, j?.error, j?.error_description);
+    await putKakao({ ...cur, broken: true, brokenAt: Date.now(), reason: j?.error_description || j?.error || String(r.status) });
+    return null;
+  }
+  /* 새 refresh token 을 주면 갈아 끼웁니다 (안 주면 쓰던 것을 그대로) */
+  const next = { ...cur, broken: false, reason: null, usedAt: Date.now() };
+  if (j.refresh_token) next.refresh = j.refresh_token;
+  await putKakao(next);
+  return j.access_token;
+}
+
+/* 보내기. 실패해도 부른 쪽을 멈추지 않습니다 */
+export async function kakaoSend(text, url) {
+  try {
+    const token = await kakaoAccess();
+    if (!token) return false;
+    const template = {
+      object_type: "text",
+      text: String(text).slice(0, 190),
+      link: { web_url: url || KAKAO_REDIRECT, mobile_web_url: url || KAKAO_REDIRECT },
+      button_title: "열어보기",
+    };
+    const r = await fetch("https://kapi.kakao.com/v2/api/talk/memo/default/send", {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/x-www-form-urlencoded;charset=utf-8" },
+      body: new URLSearchParams({ template_object: JSON.stringify(template) }),
+    });
+    if (!r.ok) console.error("kakao send fail", r.status, (await r.text()).slice(0, 200));
+    return r.ok;
+  } catch (e) { console.error("kakaoSend", e?.message); return false; }
+}

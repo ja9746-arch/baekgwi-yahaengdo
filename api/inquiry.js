@@ -7,7 +7,7 @@
  * 보관 3년 — 소비자 불만·분쟁처리 기록 기간입니다.
  */
 import crypto from "node:crypto";
-import { listInquiries, putInquiry, SECRET } from "./_lib.js";
+import { kakaoSend, listInquiries, putInquiry, SECRET } from "./_lib.js";
 
 const LIMITS = { name: 40, contact: 120, birth: 20, body: 2000 };
 const clean = (v, n) => String(v ?? "").replace(/\u0000/g, "").trim().slice(0, n);
@@ -49,6 +49,12 @@ export default async function handler(req, res) {
     const id = "q-" + Date.now().toString(36) + "-" + crypto.randomBytes(4).toString("hex");
     await putInquiry({ id, at: Date.now(), who, name, contact, birth, body, done: false, memo: "" });
     res.status(200).json({ ok: true, id });
+
+    /* 손님을 기다리게 하지 않고 뒤에서 알립니다 */
+    kakaoSend(
+      `[백귀야행도] 문의 1건\n${name} · ${contact}${birth ? " · " + birth : ""}\n${body.replace(/\s+/g, " ").slice(0, 80)}`,
+      "https://baekgwi-yahaengdo.vercel.app/admin.html",
+    ).catch(() => {});
   } catch (e) {
     console.error("inquiry save fail", e?.message, e?.name);
     res.status(500).json({ error: "접수하지 못했습니다. 전화나 메일로 알려 주세요" });

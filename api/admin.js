@@ -9,7 +9,8 @@
 import {
   ADMIN_COOKIE, isAdmin, KEEP_DAYS, KEEP_DAYS_INQ, keepUntil, keepUntilInq,
   listRecords, listInquiries, getInquiry, putInquiry,
-  getConfig, putConfig, getRecord, putRecord, listStats, KEEP_DAYS as KD,
+  getConfig, putConfig, getRecord, putRecord, listStats,
+  getKakao, putKakao, kakaoSend,
   same, setCookie, sign, SECRET,
 } from "./_lib.js";
 
@@ -138,6 +139,33 @@ export default async function handler(req, res) {
       res.setHeader("content-disposition", `attachment; filename="baekgwi-maechul-${stamp}.csv"`);
       res.status(200).send("\uFEFF" + [head.map(esc).join(","), ...body].join("\r\n"));
     } catch (e) { console.error("csv fail", e?.message); res.status(500).json({ error: "만들지 못했습니다" }); }
+    return;
+  }
+
+  /* ── 카카오 알림 ───────────────────── */
+  if (act === "kakao") {
+    const k = await getKakao();
+    res.status(200).json({
+      ok: true,
+      연결됨: !!(k && k.refresh && !k.broken),
+      끊김: !!(k && k.broken),
+      사유: k?.reason || null,
+      연결한때: k?.at || null,
+      열쇠있음: !!process.env.KAKAO_REST_KEY,
+    });
+    return;
+  }
+  if (req.method === "POST" && act === "kakaotest") {
+    const sent = await kakaoSend(
+      "[백귀야행도] 시험 알림입니다. 이 글이 보이면 연결이 잘 된 것입니다.",
+      "https://baekgwi-yahaengdo.vercel.app/admin.html",
+    );
+    res.status(200).json(sent ? { ok: true } : { ok: false, error: "보내지 못했습니다. 다시 연결해 주십시오" });
+    return;
+  }
+  if (req.method === "POST" && act === "kakaooff") {
+    await putKakao({ refresh: null, at: null, broken: false, reason: null });
+    res.status(200).json({ ok: true });
     return;
   }
 

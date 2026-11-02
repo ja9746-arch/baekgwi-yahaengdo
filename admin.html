@@ -217,6 +217,12 @@
     </section>
 
     <section class="card">
+      <h2>카톡 알림</h2>
+      <p class="note" style="margin-top:0" id="kkNote">확인하는 중…</p>
+      <div class="row" style="margin-top:14px" id="kkRow"></div>
+    </section>
+
+    <section class="card">
       <h2>방문</h2>
       <p class="note" style="margin-top:0">
         누가 왔는지는 보지 않고 숫자만 셉니다. 아이피도 쿠키도 남기지 않습니다.<br>
@@ -553,6 +559,44 @@ $('#cfgSave').onclick = async () => {
   else m.textContent = r.error || '저장하지 못했습니다';
 };
 
+/* ── 카톡 알림 ───────────────────────── */
+async function loadKakao(){
+  const n = $('#kkNote'), row = $('#kkRow');
+  row.textContent=''; n.textContent='확인하는 중…';
+  const r = await api('/api/admin?do=kakao');
+  if (!r.ok) { n.textContent = r.error || '확인하지 못했습니다'; return; }
+
+  const add = (label, fn, quiet) => {
+    const b=document.createElement('button'); b.type='button';
+    if(quiet) b.className='quiet'; b.textContent=label; b.onclick=fn; row.append(b); return b; };
+  const msg = document.createElement('span'); msg.className='note'; msg.style.margin='0';
+
+  if (!r.열쇠있음) { n.textContent = '카카오 열쇠가 아직 설정되지 않았습니다.'; return; }
+
+  if (r.연결됨) {
+    n.innerHTML = '<b style="color:#9fd49a;font-weight:400">연결되어 있습니다.</b> '
+      + '문의가 들어오면 사장님 카톡으로 갑니다. 손님에게는 가지 않습니다.'
+      + (r.연결한때 ? '<br>연결한 때 ' + fmt(r.연결한때) : '');
+    add('시험 보내기', async () => {
+      msg.textContent='보내는 중…';
+      const t = await api('/api/admin', { do:'kakaotest' });
+      msg.textContent = t.ok ? '보냈습니다. 카톡을 확인해 보십시오' : (t.error || '실패');
+    });
+    add('다시 연결', () => { location.href='/api/kakao?go=1'; }, true);
+    add('끊기', async () => { await api('/api/admin', { do:'kakaooff' }); loadKakao(); }, true);
+  } else if (r.끊김) {
+    n.innerHTML = '<b style="color:#f09a8a;font-weight:400">연결이 끊겼습니다.</b> '
+      + '두 달 넘게 알림이 없으면 카카오가 끊습니다. 아래를 눌러 다시 이으십시오.'
+      + (r.사유 ? '<br><span style="color:#7d6e58">' + r.사유 + '</span>' : '');
+    add('다시 연결', () => { location.href='/api/kakao?go=1'; });
+  } else {
+    n.innerHTML = '아직 연결하지 않으셨습니다. 한 번 누르면 카카오로 갔다가 돌아옵니다.<br>'
+      + '그 뒤로는 문의가 들어올 때마다 사장님 카톡으로 알림이 옵니다. 공짜이고 손님에게는 가지 않습니다.';
+    add('카톡 연결', () => { location.href='/api/kakao?go=1'; });
+  }
+  row.append(msg);
+}
+
 /* ── 방문 ─────────────────────────────── */
 const WHAT_NAME = { gwansang:'백귀관상', saju:'백귀사주', tarot:'백귀타로',
   terms:'이용약관', privacy:'개인정보', refund:'환불정책',
@@ -675,6 +719,7 @@ async function boot(){
   await load();
   await loadQ();
   await loadStat();
+  await loadKakao();
 }
 api('/api/admin?do=me').then(r => { if (r.ok) { show(true); boot(); } });
 </script>
