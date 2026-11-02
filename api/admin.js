@@ -9,7 +9,7 @@
 import {
   ADMIN_COOKIE, isAdmin, KEEP_DAYS, KEEP_DAYS_INQ, keepUntil, keepUntilInq,
   listRecords, listInquiries, getInquiry, putInquiry,
-  getConfig, putConfig, getRecord, putRecord, listStats,
+  getConfig, putConfig, getRecord, putRecord, listStats, KEEP_DAYS as KD,
   same, setCookie, sign, SECRET,
 } from "./_lib.js";
 
@@ -98,6 +98,46 @@ export default async function handler(req, res) {
   if (act === "stat") {
     try { res.status(200).json({ ok: true, rows: await listStats(30) }); }
     catch (e) { console.error("stat fail", e?.message); res.status(200).json({ ok: true, rows: [] }); }
+    return;
+  }
+
+  /* ── 전체 내려받기 (백업) ──────────────
+   * 법정 5년 보관 자료가 버셀 한 군데에만 있으면 안 됩니다.
+   * 통째로 받아 다른 곳에 한 벌 더 두십시오.
+   * ────────────────────────────────────── */
+  if (act === "export") {
+    try {
+      const [pay, inq, stat, cfg] = await Promise.all([
+        listRecords(2000), listInquiries(2000), listStats(400), getConfig(),
+      ]);
+      const stamp = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 16).replace("T", "_").replace(":", "");
+      res.setHeader("content-type", "application/json; charset=utf-8");
+      res.setHeader("content-disposition", `attachment; filename="baekgwi-backup-${stamp}.json"`);
+      res.status(200).send(JSON.stringify({
+        받은때: new Date().toISOString(), 상호: "온미라이프",
+        결제: pay, 문의: inq, 방문: stat, 설정: cfg,
+      }, null, 2));
+    } catch (e) { console.error("export fail", e?.message); res.status(500).json({ error: "내려받지 못했습니다" }); }
+    return;
+  }
+
+  /* 매출 표를 엑셀로 */
+  if (act === "csv") {
+    try {
+      const rows = await listRecords(2000);
+      const esc = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const d = ms => { if (!ms) return ""; const k = new Date(ms + 9 * 3600000);
+        return k.toISOString().slice(0, 19).replace("T", " "); };
+      const head = ["결제번호", "서비스", "금액", "결제시각", "열람시각", "환불", "오류"];
+      const body = rows.map(r => [
+        r.id, r.service ? "백귀" + r.service : "", r.amount || 0,
+        d(r.paidAt || r.at), d(r.openedAt), r.refunded ? "환불함" : "", r.error || "",
+      ].map(esc).join(","));
+      const stamp = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      res.setHeader("content-type", "text/csv; charset=utf-8");
+      res.setHeader("content-disposition", `attachment; filename="baekgwi-maechul-${stamp}.csv"`);
+      res.status(200).send("\uFEFF" + [head.map(esc).join(","), ...body].join("\r\n"));
+    } catch (e) { console.error("csv fail", e?.message); res.status(500).json({ error: "만들지 못했습니다" }); }
     return;
   }
 

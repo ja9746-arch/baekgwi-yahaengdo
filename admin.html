@@ -93,6 +93,12 @@
          background:linear-gradient(90deg,#8a5f22,#d9a94e);min-width:2px}
   .bar b{text-align:right;color:#cfae6c;font-weight:400;font-variant-numeric:tabular-nums}
   .bar.zero u{background:rgba(200,150,70,.18)}
+  tr.tap{cursor:pointer}
+  tr.tap:hover td{background:rgba(214,166,80,.07)}
+  tr.tap td:first-child::before{content:'▸ ';color:#8d7c63}
+  tr.tap.open td:first-child::before{content:'▾ ';color:#cfae6c}
+  tr.kid td{background:#150c0a;font-size:12.5px;color:#b6a88a;padding-left:20px}
+  tr.kid td b{color:#d9c6a0;font-weight:400}
   a{color:#d9b45f}
   [hidden]{display:none!important}
 </style>
@@ -201,9 +207,13 @@
         </p>
       </div>
 
+      <div id="byMonth" style="margin-top:16px"></div>
       <div id="byService" style="margin-top:16px"></div>
       <div class="money" id="moneyBox"></div>
       <p class="note" id="moneyNote"></p>
+      <div class="row" style="margin-top:14px">
+        <button id="csvBtn" type="button" class="quiet mini">엑셀로 내려받기</button>
+      </div>
     </section>
 
     <section class="card">
@@ -241,6 +251,14 @@
         (대금결제·재화 공급 5년, 계약·청약철회 5년, 소비자 불만·분쟁처리 3년).<br>
         날마다 새벽에 저절로 돌면서 기간이 지난 것을 실제로 지웁니다.
         적어만 두고 안 지우면 거짓말이 되기 때문입니다.
+      </p>
+      <div class="row" style="margin-top:14px">
+        <button id="backupBtn" type="button">전체 내려받기 (백업)</button>
+        <span class="note" style="margin:0">결제·문의·방문·설정을 한 파일로</span>
+      </div>
+      <p class="note">
+        법으로 5년 보관해야 하는 자료가 버셀 한 군데에만 있습니다.
+        달에 한 번쯤 받아서 다른 곳에 한 벌 더 두십시오.
       </p>
       <div class="row" style="margin-top:14px">
         <button id="purgeBtn" type="button" class="quiet">지금 한 번 치우기</button>
@@ -429,34 +447,73 @@ function fillMonths(){
   sel.value = keep && [...sel.options].some(o=>o.value===keep) ? keep : (keys[0] || '*');
 }
 
+/* 표 한 줄을 누르면 그 아래로 내역이 펼쳐집니다 */
+function tapRow(tb, cells, items){
+  const tr = document.createElement('tr'); tr.className='tap';
+  cells.forEach(([v,c]) => { const d=document.createElement('td'); if(c)d.className=c; d.textContent=v; tr.append(d); });
+  tb.append(tr);
+  let open = false, kids = [];
+  tr.onclick = () => {
+    open = !open;
+    tr.classList.toggle('open', open);
+    if (!open) { kids.forEach(k=>k.remove()); kids=[]; return; }
+    kids = items.map(x => {
+      const k = document.createElement('tr'); k.className='kid';
+      const td = document.createElement('td'); td.colSpan = cells.length;
+      const b = document.createElement('b'); b.textContent = x.id;
+      td.append(b, document.createTextNode(
+        '  ' + (x.amount ? x.amount.toLocaleString('ko-KR')+'원' : '') +
+        '  ' + fmt(x.paidAt||x.at) +
+        (x.refunded ? '  · 환불함' : (x.error ? '  · 오류' : (x.openedAt ? '  · 열람함' : '  · 열람 안 함')))
+      ));
+      k.append(td); tr.after(k); return k;
+    }).reverse();
+  };
+}
+
 function money(){
   const k = $('#mon').value || '*';
   const rows = ALL.filter(x => k==='*' || monKey(x.paidAt||x.at)===k);
   const live = rows.filter(x => !x.refunded);
   const back = rows.filter(x => x.refunded);
+  const feePct = (CFG.feeRate/100) * (CFG.feeVat ? 1.1 : 1);
 
-  /* 서비스별 */
+  /* 달별 — 누르면 그 달의 결제가 펼쳐지고, 달 이름을 다시 누르면 접힙니다 */
+  const bm = $('#byMonth'); bm.textContent='';
+  if (k === '*' && ALL.length) {
+    const byM = {};
+    ALL.forEach(x => { const m = monKey(x.paidAt||x.at); (byM[m] = byM[m] || []).push(x); });
+    const t = document.createElement('table');
+    t.innerHTML = '<thead><tr><th>달</th><th>건수</th><th>매출</th><th>실입금</th></tr></thead>';
+    const tb = document.createElement('tbody');
+    Object.keys(byM).sort().reverse().forEach(m => {
+      const g = byM[m].filter(x=>!x.refunded);
+      const sum = g.reduce((a,x)=>a+(+x.amount||0),0);
+      tapRow(tb, [[monLabel(m)], [g.length+'건','num'], [won(sum),'num'], [won(sum-sum*feePct),'num']],
+             byM[m].slice().sort((a,b)=>(b.paidAt||b.at)-(a.paidAt||a.at)));
+    });
+    const sc=document.createElement('div'); sc.className='scroll'; t.append(tb); sc.append(t); bm.append(sc);
+  }
+
+  /* 서비스별 — 누르면 그 서비스 결제가 펼쳐집니다 */
   const bs = $('#byService'); bs.textContent='';
   const order = ['사주','타로','관상'];
-  const t = document.createElement('table');
-  t.innerHTML = '<thead><tr><th>서비스</th><th>건수</th><th>매출</th></tr></thead>';
-  const tb = document.createElement('tbody');
+  const t2 = document.createElement('table');
+  t2.innerHTML = '<thead><tr><th>서비스</th><th>건수</th><th>매출</th></tr></thead>';
+  const tb2 = document.createElement('tbody');
   let any = false;
   order.forEach(name => {
     const g = live.filter(x => x.service === name);
     if (!g.length) return;
     any = true;
-    const tr = document.createElement('tr');
-    const td = (v,c)=>{const d=document.createElement('td');if(c)d.className=c;d.textContent=v;return d};
-    tr.append(td('백귀'+name), td(g.length+'건','num'), td(won(g.reduce((a,x)=>a+(+x.amount||0),0)),'num'));
-    tb.append(tr);
+    tapRow(tb2, [['백귀'+name], [g.length+'건','num'], [won(g.reduce((a,x)=>a+(+x.amount||0),0)),'num']],
+           g.slice().sort((a,b)=>(b.paidAt||b.at)-(a.paidAt||a.at)));
   });
-  if (any) { const sc=document.createElement('div'); sc.className='scroll'; t.append(tb); sc.append(t); bs.append(sc); }
+  if (any) { const sc=document.createElement('div'); sc.className='scroll'; t2.append(tb2); sc.append(t2); bs.append(sc); }
 
   /* 돈 계산 */
   const gross = live.reduce((a,x)=>a+(+x.amount||0),0);
   const refund = back.reduce((a,x)=>a+(+x.amount||0),0);
-  const feePct = (CFG.feeRate/100) * (CFG.feeVat ? 1.1 : 1);
   const fee = gross * feePct;
   const net = gross - fee;
   const vat = CFG.vatRate ? gross * (CFG.vatRate/100) / (1 + CFG.vatRate/100) : 0;
@@ -479,7 +536,8 @@ function money(){
   if (vat) line('이 중 낼 부가가치세 (' + CFG.vatRate + '%)', won(vat), 'muted');
 
   $('#moneyNote').innerHTML =
-    '통장에 들어올 돈은 <b style="color:#a2917a;font-weight:400">부가가치세와 소득세를 내기 전</b> 금액입니다.'
+    '줄을 누르면 그 안의 결제 건이 펼쳐집니다.<br>'
+    + '통장에 들어올 돈은 <b style="color:#a2917a;font-weight:400">세금을 내기 전</b> 금액입니다.'
     + (CFG.yearlyFee ? ' 연관리비 ' + won(CFG.yearlyFee) + '은 해마다 따로 나갑니다.' : '')
     + '<br>정확한 입금액은 결제대행사 정산 내역이 기준입니다. 여기 숫자는 어림셈입니다.';
 }
@@ -540,6 +598,10 @@ async function loadStat(){
   t.append(tb); sc.append(t); cl.append(sc);
 }
 $('#stReload').onclick = loadStat;
+
+/* 내려받기 — 로그인 쿠키가 같이 가도록 화면을 띄웁니다 */
+$('#csvBtn').onclick = () => { location.href = '/api/admin?do=csv'; };
+$('#backupBtn').onclick = () => { location.href = '/api/admin?do=export'; };
 
 /* ── 문의함 ───────────────────────────── */
 let QS = [];
