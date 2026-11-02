@@ -212,16 +212,17 @@
   <section class="inq">
     <div class="inqin">
       <h2>문의하기</h2>
-      <p class="lead">풀이가 열리지 않거나, 환불이 필요하시거나,<br>그 밖에 묻고 싶은 것이 있으시면 남겨 주세요.</p>
+      <p class="lead">풀이가 열리지 않거나, 환불이 필요하시거나,<br>그 밖에 묻고 싶은 것이 있으시면 남겨 주세요.<br>
+         <span style="color:#6f6253">이름과 생년월일을 적어 주시면 결제를 찾기가 쉽습니다.</span></p>
       <form id="inqForm" autocomplete="on" novalidate>
         <div class="two">
           <div>
-            <label for="iName">이름 <span style="color:#6f6253">(안 적으셔도 됩니다)</span></label>
-            <input id="iName" name="name" type="text" maxlength="40" autocomplete="name">
+            <label for="iName">이름</label>
+            <input id="iName" name="name" type="text" maxlength="40" autocomplete="name" required>
           </div>
           <div>
-            <label for="iPay">결제번호 <span style="color:#6f6253">(있으시면)</span></label>
-            <input id="iPay" name="payId" type="text" maxlength="80" autocapitalize="off" spellcheck="false">
+            <label for="iBirth">생년월일 <span style="color:#6f6253">(예: 900315)</span></label>
+            <input id="iBirth" name="birth" type="text" maxlength="20" inputmode="numeric" autocapitalize="off" spellcheck="false">
           </div>
         </div>
         <label for="iCon">답을 받으실 곳 · 전화번호나 이메일</label>
@@ -372,7 +373,8 @@ document.querySelectorAll('[data-go]').forEach(el=>{
     e.preventDefault();
     const payload={
       name:f.name.value, contact:f.contact.value,
-      payId:f.payId.value, body:f.body.value, website:f.website.value };
+      birth:f.birth.value, body:f.body.value, website:f.website.value };
+    if(!payload.name.trim()){ msg.className='msg bad'; msg.textContent='이름을 적어 주세요.'; f.name.focus(); return; }
     if(!payload.contact.trim()){ msg.className='msg bad'; msg.textContent='답을 받으실 곳을 적어 주세요.'; f.contact.focus(); return; }
     if(payload.body.trim().length<5){ msg.className='msg bad'; msg.textContent='문의 내용을 조금 더 적어 주세요.'; f.body.focus(); return; }
     btn.disabled=true; msg.className='msg'; msg.textContent='보내는 중…';

@@ -1,6 +1,6 @@
 /* 손님 문의 받기
  *
- * POST /api/inquiry {name, contact, payId, body, website}
+ * POST /api/inquiry {name, contact, birth, body, website}
  *   website 는 사람 눈에 안 보이는 덫입니다. 기계가 채우면 버립니다.
  *
  * 받은 문의는 관리 화면의 '문의함'에 결제 기록과 나란히 쌓입니다.
@@ -9,7 +9,7 @@
 import crypto from "node:crypto";
 import { listInquiries, putInquiry, SECRET } from "./_lib.js";
 
-const LIMITS = { name: 40, contact: 120, payId: 80, body: 2000 };
+const LIMITS = { name: 40, contact: 120, birth: 20, body: 2000 };
 const clean = (v, n) => String(v ?? "").replace(/\u0000/g, "").trim().slice(0, n);
 
 export default async function handler(req, res) {
@@ -26,9 +26,10 @@ export default async function handler(req, res) {
 
   const name = clean(b.name, LIMITS.name);
   const contact = clean(b.contact, LIMITS.contact);
-  const payId = clean(b.payId, LIMITS.payId);
+  const birth = clean(b.birth, LIMITS.birth).replace(/[^0-9.\-\/ ]/g, "");
   const body = clean(b.body, LIMITS.body);
 
+  if (!name) { res.status(400).json({ error: "이름을 적어 주세요" }); return; }
   if (!contact) { res.status(400).json({ error: "답을 받으실 연락처를 적어 주세요" }); return; }
   if (body.length < 5) { res.status(400).json({ error: "문의 내용을 조금 더 적어 주세요" }); return; }
 
@@ -43,7 +44,7 @@ export default async function handler(req, res) {
     }
 
     const id = "q-" + Date.now().toString(36) + "-" + crypto.randomBytes(4).toString("hex");
-    await putInquiry({ id, at: Date.now(), who, name, contact, payId, body, done: false, memo: "" });
+    await putInquiry({ id, at: Date.now(), who, name, contact, birth, body, done: false, memo: "" });
     res.status(200).json({ ok: true, id });
   } catch (e) {
     console.error("inquiry fail", e?.message);

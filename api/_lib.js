@@ -79,73 +79,62 @@ export const keepUntilInq = at => (at || Date.now()) + KEEP_DAYS_INQ * 86400000;
 export const isExpired = rec => Date.now() > keepUntil(rec.paidAt || rec.at);
 export const isExpiredInq = rec => Date.now() > keepUntilInq(rec.at);
 
-/* 결제 기록 — 결제 한 건이 파일 하나. 동시에 써도 서로 덮지 않습니다 */
-export async function putRecord(rec) {
+
+/* ── 저장소 ────────────────────────────────
+ * 버셀 블롭의 '비공개' 저장소를 씁니다. 주소를 알아도 열쇠 없이는 못 읽습니다.
+ * 손님의 이름·연락처가 들어 있으니 공개 저장소를 쓰지 않습니다.
+ * ────────────────────────────────────────── */
+const PRIVATE = { access: "private" };
+
+async function blobPut(path, obj) {
   const { put } = await import("@vercel/blob");
-  await put(`pay/${rec.id}.json`, JSON.stringify(rec), {
-    access: "public", contentType: "application/json",
+  await put(path, JSON.stringify(obj), {
+    ...PRIVATE, contentType: "application/json",
     addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 0,
   });
 }
 
-export async function getRecord(id) {
+async function blobGet(path) {
+  const { get } = await import("@vercel/blob");
+  try {
+    const r = await get(path, { ...PRIVATE, useCache: false });
+    if (!r || r.statusCode !== 200 || !r.stream) return null;
+    return JSON.parse(await new Response(r.stream).text());
+  } catch { return null; }
+}
+
+async function blobDel(path) {
+  const { del } = await import("@vercel/blob");
+  try { await del(path, PRIVATE); } catch {}
+}
+
+async function blobAll(prefix, limit) {
   const { list } = await import("@vercel/blob");
-  const { blobs } = await list({ prefix: `pay/${id}.json`, limit: 1 });
-  if (!blobs.length) return null;
-  const r = await fetch(blobs[0].url, { cache: "no-store" });
-  return r.ok ? r.json() : null;
+  const { blobs } = await list({ ...PRIVATE, prefix, limit });
+  const out = await Promise.all(blobs.map(b => blobGet(b.pathname)));
+  return out.filter(Boolean);
 }
 
-export async function delRecord(id) {
-  const { del, list } = await import("@vercel/blob");
-  const { blobs } = await list({ prefix: `pay/${id}.json`, limit: 1 });
-  if (blobs.length) await del(blobs[0].url);
-}
-
+/* 결제 기록 — 결제 한 건이 파일 하나. 동시에 써도 서로 덮지 않습니다 */
+export const putRecord  = rec => blobPut(`pay/${rec.id}.json`, rec);
+export const getRecord  = id  => blobGet(`pay/${id}.json`);
+export const delRecord  = id  => blobDel(`pay/${id}.json`);
 export async function listRecords(limit = 200) {
-  const { list } = await import("@vercel/blob");
-  const { blobs } = await list({ prefix: "pay/", limit });
-  const out = await Promise.all(blobs.map(async b => {
-    try { const r = await fetch(b.url, { cache: "no-store" }); return r.ok ? await r.json() : null; }
-    catch { return null; }
-  }));
-  return out.filter(Boolean).sort((a, b) => (b.at || 0) - (a.at || 0));
+  const rows = await blobAll("pay/", limit);
+  return rows.sort((a, b) => (b.at || 0) - (a.at || 0));
 }
+
 
 /* ── 문의 ─────────────────────────────────
  * 손님이 남긴 문의. 결제 기록과 같은 자리에서 보도록 둡니다.
  * 보관은 3년(소비자 불만·분쟁처리 기록).
  * ────────────────────────────────────────── */
-export async function putInquiry(inq) {
-  const { put } = await import("@vercel/blob");
-  await put(`inq/${inq.id}.json`, JSON.stringify(inq), {
-    access: "public", contentType: "application/json",
-    addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 0,
-  });
-}
-
-export async function getInquiry(id) {
-  const { list } = await import("@vercel/blob");
-  const { blobs } = await list({ prefix: `inq/${id}.json`, limit: 1 });
-  if (!blobs.length) return null;
-  const r = await fetch(blobs[0].url, { cache: "no-store" });
-  return r.ok ? r.json() : null;
-}
-
-export async function delInquiry(id) {
-  const { del, list } = await import("@vercel/blob");
-  const { blobs } = await list({ prefix: `inq/${id}.json`, limit: 1 });
-  if (blobs.length) await del(blobs[0].url);
-}
-
+export const putInquiry = inq => blobPut(`inq/${inq.id}.json`, inq);
+export const getInquiry = id  => blobGet(`inq/${id}.json`);
+export const delInquiry = id  => blobDel(`inq/${id}.json`);
 export async function listInquiries(limit = 300) {
-  const { list } = await import("@vercel/blob");
-  const { blobs } = await list({ prefix: "inq/", limit });
-  const out = await Promise.all(blobs.map(async b => {
-    try { const r = await fetch(b.url, { cache: "no-store" }); return r.ok ? await r.json() : null; }
-    catch { return null; }
-  }));
-  return out.filter(Boolean).sort((a, b) => (b.at || 0) - (a.at || 0));
+  const rows = await blobAll("inq/", limit);
+  return rows.sort((a, b) => (b.at || 0) - (a.at || 0));
 }
 
 /* ── 설정 ─────────────────────────────────
@@ -159,25 +148,15 @@ const CFG_DEFAULT = {
 };
 
 export async function getConfig() {
-  try {
-    const { list } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: "cfg/main.json", limit: 1 });
-    if (!blobs.length) return { ...CFG_DEFAULT };
-    const r = await fetch(blobs[0].url, { cache: "no-store" });
-    return r.ok ? { ...CFG_DEFAULT, ...(await r.json()) } : { ...CFG_DEFAULT };
-  } catch { return { ...CFG_DEFAULT }; }
+  return { ...CFG_DEFAULT, ...((await blobGet("cfg/main.json")) || {}) };
 }
 
 export async function putConfig(patch) {
-  const { put } = await import("@vercel/blob");
   const next = { ...(await getConfig()), ...patch };
   next.feeRate = Math.min(20, Math.max(0, Number(next.feeRate) || 0));
   next.vatRate = Math.min(20, Math.max(0, Number(next.vatRate) || 0));
   next.yearlyFee = Math.min(10000000, Math.max(0, Number(next.yearlyFee) || 0));
   next.feeVat = !!next.feeVat;
-  await put("cfg/main.json", JSON.stringify(next), {
-    access: "public", contentType: "application/json",
-    addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 0,
-  });
+  await blobPut("cfg/main.json", next);
   return next;
 }

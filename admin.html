@@ -334,11 +334,11 @@ function draw(){
     return;
   }
   const live  = rows.filter(x=>!x.refunded);
-  const money = live.reduce((a,x)=>a+(Number(x.amount)||0),0);
+  const total = live.reduce((a,x)=>a+(Number(x.amount)||0),0);
   const nOpen = rows.filter(x=>stateOf(x)==='open').length;
   const nErr  = rows.filter(x=>stateOf(x)==='err').length;
   const nRef  = rows.filter(x=>x.refunded).length;
-  $('#sum').innerHTML = '환불 뺀 합계 <b>' + money.toLocaleString('ko-KR') + '원</b> · 열람함 <b>'
+  $('#sum').innerHTML = '환불 뺀 합계 <b>' + total.toLocaleString('ko-KR') + '원</b> · 열람함 <b>'
     + nOpen + '건</b> · 열람 안 함 <b>' + (rows.length-nOpen-nErr-nRef) + '건</b> · 오류 <b>' + nErr + '건</b>'
     + (nRef ? ' · 환불 <b>' + nRef + '건</b>' : '');
 
@@ -490,7 +490,7 @@ function drawQ(){
     const h = document.createElement('div'); h.className='qhead';
     const nm = document.createElement('b'); nm.textContent = q.name || '이름 없음';
     h.append(nm);
-    [q.contact, q.payId ? '결제번호 ' + q.payId : '', fmt(q.at)].filter(Boolean).forEach(v => {
+    [q.contact, q.birth ? '생년월일 ' + q.birth : '', fmt(q.at)].filter(Boolean).forEach(v => {
       const sp=document.createElement('span'); sp.textContent=v; h.append(sp); });
     const bd = document.createElement('p'); bd.className='qbody'; bd.textContent = q.body;
     const ta = document.createElement('textarea'); ta.placeholder='처리 메모 (손님에게는 안 보입니다)'; ta.value = q.memo||'';
