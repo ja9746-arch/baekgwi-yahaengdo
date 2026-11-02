@@ -219,6 +219,7 @@
       </p>
       <div class="row" style="margin-top:14px">
         <button id="purgeBtn" type="button" class="quiet">지금 한 번 치우기</button>
+        <button id="testBtn" type="button" class="quiet">저장소 점검</button>
         <span class="note" style="margin:0" id="purgeMsg"></span>
       </div>
     </section>
@@ -520,6 +521,12 @@ $('#clearBtn').onclick = () => { ['fq','fsvc','fst','f1','f2'].forEach(id=>{$('#
   $('#'+id).addEventListener('input', draw);
   $('#'+id).addEventListener('change', draw);
 });
+
+$('#testBtn').onclick = async () => {
+  const m = $('#purgeMsg'); m.textContent = '점검하는 중…';
+  const r = await api('/api/selftest');
+  m.textContent = (r.step || []).join(' · ') || (r.error || '점검하지 못했습니다');
+};
 
 $('#purgeBtn').onclick = async () => {
   const m = $('#purgeMsg'); m.textContent = '치우는 중…';

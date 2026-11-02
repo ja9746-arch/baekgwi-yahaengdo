@@ -88,7 +88,7 @@ const PRIVATE = { access: "private" };
 
 async function blobPut(path, obj) {
   const { put } = await import("@vercel/blob");
-  await put(path, JSON.stringify(obj), {
+  return put(path, JSON.stringify(obj), {
     ...PRIVATE, contentType: "application/json",
     addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 0,
   });
@@ -103,16 +103,19 @@ async function blobGet(path) {
   } catch { return null; }
 }
 
+/* del 과 list 는 access 를 받지 않습니다. 열쇠(BLOB_READ_WRITE_TOKEN)만으로 닿습니다 */
 async function blobDel(path) {
   const { del } = await import("@vercel/blob");
-  try { await del(path, PRIVATE); } catch {}
+  try { await del(path); } catch (e) { console.error("blobDel", path, e?.message); }
 }
 
 async function blobAll(prefix, limit) {
   const { list } = await import("@vercel/blob");
-  const { blobs } = await list({ ...PRIVATE, prefix, limit });
-  const out = await Promise.all(blobs.map(b => blobGet(b.pathname)));
-  return out.filter(Boolean);
+  try {
+    const { blobs } = await list({ prefix, limit });
+    const out = await Promise.all(blobs.map(b => blobGet(b.pathname)));
+    return out.filter(Boolean);
+  } catch (e) { console.error("blobAll", prefix, e?.message); return []; }
 }
 
 /* 결제 기록 — 결제 한 건이 파일 하나. 동시에 써도 서로 덮지 않습니다 */
