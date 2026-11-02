@@ -69,6 +69,15 @@
           "value": "noindex, nofollow"
         }
       ]
+    },
+    {
+      "source": "/img/og.jpg",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
     }
   ],
   "crons": [

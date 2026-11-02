@@ -2,3 +2,5 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 Disallow: /api/
+
+Sitemap: https://baekgwi-yahaengdo.vercel.app/sitemap.xml
