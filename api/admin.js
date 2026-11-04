@@ -158,7 +158,7 @@ export default async function handler(req, res) {
   if (req.method === "POST" && act === "kakaotest") {
     const sent = await kakaoSend(
       "[백귀야행도] 시험 알림입니다. 이 글이 보이면 연결이 잘 된 것입니다.",
-      "https://baekgwi-yahaengdo.vercel.app/admin.html",
+      "https://100gwi.com/admin.html",
     );
     res.status(200).json(sent ? { ok: true } : { ok: false, error: "보내지 못했습니다. 다시 연결해 주십시오" });
     return;

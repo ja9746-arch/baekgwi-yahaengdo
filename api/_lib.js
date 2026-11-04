@@ -210,6 +210,11 @@ export async function listStats(days = 30) {
  *   KAKAO_CLIENT_SECRET   클라이언트 시크릿. 앱에서 켜 두었으면 반드시 있어야 합니다
  *   cfg/kakao.json   한 번 연결하면 받는 refresh token. 비공개 저장소에 둡니다.
  * ────────────────────────────────────────── */
+/* 카카오가 되돌아오는 자리.
+ * 이 주소는 카카오 쪽 '플랫폼 키 → 카카오 로그인 리다이렉트 URI' 에 등록된 것과
+ * 글자까지 같아야 한다. 도메인을 100gwi.com 으로 옮겼어도 여기는 그대로 둔다.
+ * 바꾸려면 카카오 쪽에 새 주소를 먼저 등록하고 나서 바꿀 것. 안 그러면 '다시 연결'이
+ * KOE006 으로 막힌다. 지금 연결은 refresh token 으로 도는 것이라 영향받지 않는다. */
 export const KAKAO_REDIRECT = "https://baekgwi-yahaengdo.vercel.app/api/kakao";
 
 /* 앱에 클라이언트 시크릿이 켜져 있으면 함께 보내야 합니다 */
